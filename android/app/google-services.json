@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "317289370549",
+    "project_id": "assetflow-fire1",
+    "storage_bucket": "assetflow-fire1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:317289370549:android:cbc9efa0566f428962fffc",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAtDs2s9T2NuHx2roT8fYX6obbj9H_dGR0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
