@@ -253,7 +253,7 @@ class AssetFlowLoadingWidget extends StatelessWidget {
         // Show loader overlay when loading
         if (isLoading)
           Container(
-            color: Colors.black.withOpacity(0.5),
+            color: Color.fromRGBO(0, 0, 0, 0.5),
             width: double.infinity,
             height: double.infinity,
             child: Center(

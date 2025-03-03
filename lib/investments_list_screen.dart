@@ -139,7 +139,7 @@ class InvestmentsListScreenState extends State<InvestmentsListScreen> {
                 width: 180,
                 height: 180,
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withAlpha(26), // 0.1 opacity = 26 alpha (10% of 255)
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

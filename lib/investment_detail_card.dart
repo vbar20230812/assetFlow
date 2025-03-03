@@ -57,7 +57,7 @@ class InvestmentDetailCardState extends State<InvestmentDetailCard> {
                       Text(
                         project.companyName,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
+                         color: Colors.white.withAlpha(204), // 0.8 opacity = 204 alpha (80% of 255) 
                         ),
                       ),
                     ],
@@ -66,7 +66,7 @@ class InvestmentDetailCardState extends State<InvestmentDetailCard> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withAlpha(204), // 0.8 opacity = 204 alpha (80% of 255),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -360,14 +360,13 @@ class InvestmentDetailCardState extends State<InvestmentDetailCard> {
               
               // Define cell styles based on status
               Color? rowColor;
-              if (dist.done) {
-                rowColor = Colors.green.withOpacity(0.1);
-              } else if (isOverdue) {
-                rowColor = Colors.red.withOpacity(0.1);
-              } else if (isUpcoming) {
-                rowColor = Colors.amber.withOpacity(0.1);
-              }
-              
+                if (dist.done) {
+                  rowColor = Colors.green.withAlpha(26); // 0.1 opacity = 26 alpha (10% of 255)
+                } else if (isOverdue) {
+                  rowColor = Colors.red.withAlpha(26);
+                } else if (isUpcoming) {
+                  rowColor = Colors.amber.withAlpha(26);
+                }
               return DataRow(
                 color: rowColor != null ? WidgetStateProperty.all(rowColor) : null,
                 cells: [

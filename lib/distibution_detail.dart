@@ -175,7 +175,12 @@ class DistributionDetailViewState extends State<DistributionDetailView> {
           _filterStatus = value;
         });
       },
-      selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+      selectedColor: Color.fromRGBO(
+        Theme.of(context).primaryColor.r.toInt(),
+        Theme.of(context).primaryColor.g.toInt(),
+        Theme.of(context).primaryColor.b.toInt(),
+        0.2
+      ),
       checkmarkColor: Theme.of(context).primaryColor,
     );
   }
@@ -195,13 +200,12 @@ class DistributionDetailViewState extends State<DistributionDetailView> {
         // Background color based on status
         Color? backgroundColor;
         if (dist.done) {
-          backgroundColor = Colors.green.withOpacity(0.1);
+          backgroundColor = Colors.green.withAlpha(26); // 0.1 opacity = roughly 26 alpha (10% of 255)
         } else if (isOverdue) {
-          backgroundColor = Colors.red.withOpacity(0.1);
+          backgroundColor = Colors.red.withAlpha(26);
         } else if (isUpcoming) {
-          backgroundColor = Colors.amber.withOpacity(0.1);
+          backgroundColor = Colors.amber.withAlpha(26);
         }
-        
         return Container(
           color: backgroundColor,
           child: ListTile(

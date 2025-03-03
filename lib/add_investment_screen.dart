@@ -445,7 +445,7 @@ void _validateAndAddInvestmentPlan() {
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Color.fromRGBO(0, 0, 0, 0.5),
               width: double.infinity,
               height: double.infinity,
               child: Center(
@@ -567,7 +567,7 @@ void _validateAndAddInvestmentPlan() {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Color.fromRGBO(0, 0, 0, 0.1),
             blurRadius: 4,
             offset: Offset(0, -2),
           ),
