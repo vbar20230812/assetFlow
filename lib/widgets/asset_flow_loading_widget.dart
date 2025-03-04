@@ -1,124 +1,58 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
+import 'asset_flow_loader.dart';
 
-/// A custom animated loader for AssetFlow app
-class AssetFlowLoader extends StatefulWidget {
-  final double size;
-  final Color primaryColor;
-  final Duration duration;
-
-  const AssetFlowLoader({
+/// A loading overlay widget that shows a loader over the content
+class AssetFlowLoadingWidget extends StatelessWidget {
+  final bool isLoading;
+  final Widget child;
+  final String? loadingText;
+  
+  const AssetFlowLoadingWidget({
     super.key,
-    this.size = 50.0,
-    this.primaryColor = Colors.indigo,
-    this.duration = const Duration(seconds: 1),
+    required this.isLoading,
+    required this.child,
+    this.loadingText,
   });
-
-  @override
-  State<AssetFlowLoader> createState() => _AssetFlowLoaderState();
-}
-
-class _AssetFlowLoaderState extends State<AssetFlowLoader>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+  
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: widget.size,
-      width: widget.size,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Transform.rotate(
-            angle: _controller.value * 2 * math.pi,
-            child: CustomPaint(
-              size: Size(widget.size, widget.size),
-              painter: _LoaderPainter(
-                primaryColor: widget.primaryColor,
-                progress: _controller.value,
+    return Stack(
+      children: [
+        // Main content
+        child,
+        
+        // Show loader overlay when loading
+        if (isLoading)
+          Container(
+            color: const Color.fromRGBO(0, 0, 0, 0.5),
+            width: double.infinity,
+            height: double.infinity,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AssetFlowLoader(
+                    size: 80,
+                    primaryColor: Theme.of(context).primaryColor,
+                    duration: const Duration(seconds: 3),
+                  ),
+                  if (loadingText != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: Text(
+                        loadingText!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Custom painter for the loader animation
-class _LoaderPainter extends CustomPainter {
-  final Color primaryColor;
-  final double progress;
-
-  _LoaderPainter({
-    required this.primaryColor,
-    required this.progress,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    final strokeWidth = radius * 0.2;
-
-    // Create a gradient effect for the loader
-    final gradient = SweepGradient(
-      center: Alignment.center,
-      startAngle: 0.0,
-      endAngle: 2 * math.pi,
-      colors: [
-        primaryColor.withOpacity(0.3),
-        primaryColor,
+          ),
       ],
-      stops: const [0.0, 1.0],
-      transform: GradientRotation(progress * 2 * math.pi),
-    );
-
-    // Draw background circle
-    final backgroundPaint = Paint()
-      ..color = primaryColor.withOpacity(0.1)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    canvas.drawCircle(center, radius - strokeWidth / 2, backgroundPaint);
-
-    // Draw progress arc
-    final foregroundPaint = Paint()
-      ..shader = gradient.createShader(Rect.fromCircle(
-        center: center,
-        radius: radius,
-      ))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
-      0,
-      progress * 2 * math.pi,
-      false,
-      foregroundPaint,
     );
   }
-
-  @override
-  bool shouldRepaint(_LoaderPainter oldDelegate) =>
-      oldDelegate.progress != progress ||
-      oldDelegate.primaryColor != primaryColor;
 }
