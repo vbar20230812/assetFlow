@@ -1,0 +1,53 @@
+I need you to create a Flutter application called AssetFlow that helps clients track and manage their real estate investments. The app should have the following core functionalities:
+
+1. Authentication system using Firebase
+   - Sign-in screen with email/password
+   - Sign-up screen for new users
+   - Forgot password functionality
+   - Authentication state management
+
+2. Dashboard/List Screen
+   - Display all investments in a scrollable list
+   - Each investment should show basic details (name, company, length)
+   - Empty state when no investments exist
+   - Floating action button to add new investments
+
+3. Investment Detail Screen
+   - Detailed view of a single investment
+   - Show all project details and associated plans
+   - Allow selection of plans within a project
+   - Edit and delete functionality
+
+4. New Investment Wizard (step-by-step process)
+   - Project Step: Enter project name, company, and project length
+   - Plan Step: Add one or more investment plans with details like participation type, minimum amount, interest rates, and payment distribution
+   - Amount Step: Enter investment amount (with validation against plan minimums) and important dates
+   - Fees Step: Enter refundable and non-refundable fees with notes
+
+5. Data Models
+   - Project model (name, company, length)
+   - Plan model (participation type, minimum amount, interest rate, etc.)
+   - Asset model (tracking the actual investment)
+
+6. Firebase Integration
+   - Firestore for data storage with proper collection structure
+   - Security rules and best practices
+
+7. UI/UX Requirements
+   - Material Design with a custom color theme
+   - Loading indicators for async operations
+   - Error handling and user feedback
+   - Form validation
+   - Responsive layout
+
+Technical Requirements:
+- Follow modern Flutter practices (no deprecated code)
+- Use proper state management
+- Implement logging instead of print statements
+- Modular code organization with separate files for major components
+- Split large files (>300 lines) into multiple files
+- Store Firebase configuration securely (not in version control)
+- Proper error handling and validation
+- Clean, commented code with documentation
+
+The code should be production-ready and follow best practices for a large-scale Flutter application.
