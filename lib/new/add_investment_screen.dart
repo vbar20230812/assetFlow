@@ -30,7 +30,7 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
   
   // Data for each step
   late Project _project;
-  List<Plan> _plans = [];
+  final List<Plan> _plans = [];
   Plan? _selectedPlan;
   double _investmentAmount = 0;
   DateTime _startDate = DateTime.now();

@@ -1,1 +1,34 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"assetflow-fire1","appId":"1:317289370549:android:cbc9efa0566f428962fffc","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"assetflow-fire1","configurations":{"android":"1:317289370549:android:cbc9efa0566f428962fffc","web":"1:317289370549:web:3cf0ef6336cc20c762fffc"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "assetflow-fire1",
+          "appId": "1:317289370549:android:cbc9efa0566f428962fffc",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "assetflow-fire1",
+          "configurations": {
+            "android": "1:317289370549:android:cbc9efa0566f428962fffc",
+            "web": "1:317289370549:web:3cf0ef6336cc20c762fffc"
+          }
+        }
+      }
+    }
+  },
+  "emulators": {
+    "dataconnect": {
+      "dataDir": "dataconnect/.dataconnect/pgliteData"
+    }
+  },
+  "dataconnect": {
+    "source": "dataconnect"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

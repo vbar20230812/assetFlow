@@ -84,7 +84,7 @@ class _ProjectStepState extends State<ProjectStep> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Step title
-              Text(
+              const Text(
                 'Project Information',
                 style: TextStyle(
                   fontSize: 24,
@@ -94,7 +94,7 @@ class _ProjectStepState extends State<ProjectStep> {
               ),
               const SizedBox(height: 8),
               // Step description
-              Text(
+              const Text(
                 'Enter the basic information about your investment project.',
                 style: TextStyle(
                   fontSize: 16,

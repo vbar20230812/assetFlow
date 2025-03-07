@@ -50,7 +50,7 @@ class _PlanStepState extends State<PlanStep> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Step title
-          Text(
+          const Text(
             'Investment Plans',
             style: TextStyle(
               fontSize: 24,
@@ -60,7 +60,7 @@ class _PlanStepState extends State<PlanStep> {
           ),
           const SizedBox(height: 8),
           // Step description
-          Text(
+          const Text(
             'Add one or more investment plans for this project.',
             style: TextStyle(
               fontSize: 16,
@@ -104,7 +104,7 @@ class _PlanStepState extends State<PlanStep> {
             color: AssetFlowColors.textSecondary.withOpacity(0.3),
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'No Plans Added Yet',
             style: TextStyle(
               fontSize: 20,
@@ -113,7 +113,7 @@ class _PlanStepState extends State<PlanStep> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Click the "Add Plan" button to create your first investment plan.',
             style: TextStyle(
               fontSize: 16,
@@ -287,7 +287,7 @@ class _PlanStepState extends State<PlanStep> {
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               color: AssetFlowColors.textSecondary,
             ),

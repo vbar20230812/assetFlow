@@ -193,7 +193,7 @@ class _AmountStepState extends State<AmountStep> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Step title
-              Text(
+              const Text(
                 'Investment Amount',
                 style: TextStyle(
                   fontSize: 24,
@@ -203,7 +203,7 @@ class _AmountStepState extends State<AmountStep> {
               ),
               const SizedBox(height: 8),
               // Step description
-              Text(
+              const Text(
                 'Specify your investment amount and important dates.',
                 style: TextStyle(
                   fontSize: 16,
@@ -311,7 +311,7 @@ class _AmountStepState extends State<AmountStep> {
                           padding: const EdgeInsets.only(top: 4),
                           child: Text(
                             '(${_selectedPlan!.paymentDistribution.displayName} distribution)',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
                               color: AssetFlowColors.textSecondary,
                               fontStyle: FontStyle.italic,
@@ -336,16 +336,16 @@ class _AmountStepState extends State<AmountStep> {
                         color: AssetFlowColors.info.withOpacity(0.3),
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
+                    child: const Padding(
+                      padding: EdgeInsets.all(12),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.info_outline,
                             color: AssetFlowColors.info,
                             size: 20,
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               'First payment date is calculated based on your selected plan\'s payment distribution type. You can adjust it if needed.',
@@ -520,7 +520,7 @@ class _AmountStepState extends State<AmountStep> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AssetFlowColors.textSecondary,
                   ),

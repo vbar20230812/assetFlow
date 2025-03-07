@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logging/logging.dart';
 
 import 'auth_screen.dart';
-import 'auth_service.dart';
+import '../auth/auth_service.dart';
 import '../widgets/asset_flow_loader.dart';
 import '../list/assets_list_screen.dart';
 

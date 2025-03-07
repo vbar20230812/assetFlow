@@ -1,192 +1,133 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:logging/logging.dart';
+import 'firebase_options.dart';
+import 'auth/auth_wrapper.dart';
+import 'utils/theme_colors.dart';
 
-// Import local files
-import 'OLD_firebase_options.dart';
-import 'utils/logger_util.dart';
-import 'start/splash_screen.dart';
-
-// Main application entry point
 void main() async {
-  // Ensure Flutter binding is initialized before any async operations
+  // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Configure logging with a comprehensive and informative setup
-  LoggerUtil.configureLogging();
-
-  // Create a dedicated logger for app initialization
-  final logger = Logger('AppInitialization');
-
+  // Firebase initialization with safe error handling
   try {
-    // Log the start of Firebase initialization
-    logger.info('Attempting to initialize Firebase');
-    
-    // Initialize Firebase with platform-specific configuration
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    
-    // Log successful Firebase initialization
-    logger.info('Firebase initialization completed successfully');
-
-    // Run the main application
-    runApp(const AssetFlowApp());
-  } catch (e, stackTrace) {
-    // Log any critical errors during initialization
-    logger.severe(
-      'Critical error during app initialization', 
-      e, 
-      stackTrace
-    );
-    
-    // Run a custom error app to show the fatal error
-    runApp(ErrorApp(error: e));
+    // First try to get the default app
+    Firebase.app();
+    print("Using existing Firebase app");
+  } catch (e) {
+    try {
+      // If no app exists, initialize a new one
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      print("Initialized new Firebase app");
+    } catch (e) {
+      // Handle any initialization errors
+      print("Firebase initialization error: $e");
+      // You can add fallback behavior here if needed
+    }
   }
+  
+  // Enable logging
+  _setupLogging();
+  
+  // Run the app
+  runApp(const AssetFlowApp());
 }
 
-// Error display app for critical initialization failures
-class ErrorApp extends StatelessWidget {
-  final Object error;
-
-  const ErrorApp({super.key, required this.error});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        backgroundColor: Colors.red[100],
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline, 
-                color: Colors.red[800], 
-                size: 100
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'App Initialization Failed',
-                style: TextStyle(
-                  color: Colors.red[800],
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Error Details: $error',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.red[700],
-                    fontSize: 16
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+/// Setup logging configuration
+void _setupLogging() {
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((record) {
+    final emoji = _getLogLevelEmoji(record.level);
+    print('$emoji ${record.time} | ${record.loggerName} | ${record.level.name}: ${record.message}');
+    
+    if (record.error != null) {
+      print('Error: ${record.error}');
+    }
+    
+    if (record.stackTrace != null) {
+      print('Stack trace: ${record.stackTrace}');
+    }
+  });
 }
 
-// Main application widget
+/// Get emoji for log level visualization
+String _getLogLevelEmoji(Level level) {
+  if (level == Level.SEVERE) return '🔴';
+  if (level == Level.WARNING) return '🟠';
+  if (level == Level.INFO) return '🔵';
+  if (level == Level.CONFIG) return '⚙️';
+  if (level == Level.FINE || level == Level.FINER || level == Level.FINEST) return '🟢';
+  return '📝';
+}
+
+/// Main application widget
 class AssetFlowApp extends StatelessWidget {
-  static final Logger _logger = Logger('AssetFlowApp');
-
   const AssetFlowApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    _logger.info('AssetFlowApp built.');
     return MaterialApp(
       title: 'AssetFlow',
       debugShowCheckedModeBanner: false,
-      theme: _buildAppTheme(),
-      home: const SplashScreen(),
-    );
-  }
-  
-  ThemeData _buildAppTheme() {
-    return ThemeData(
-      primarySwatch: Colors.indigo,
-      brightness: Brightness.light,
-      useMaterial3: true,
-      
-      // Button themes - using MaterialStateProperty for proper styling
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ButtonStyle(
-          minimumSize: MaterialStateProperty.all(const Size(double.infinity, 55)),
-          padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 16)),
-          foregroundColor: MaterialStateProperty.all(Colors.white), // Text color
-          backgroundColor: MaterialStateProperty.all(Colors.indigo), // Button background
-          elevation: MaterialStateProperty.all(4.0),
-          alignment: Alignment.center, // Center the button content
-          textStyle: MaterialStateProperty.all(
-            const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)
+      theme: ThemeData(
+        primaryColor: AssetFlowColors.primary,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AssetFlowColors.primary,
+          primary: AssetFlowColors.primary,
+        ),
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: AssetFlowColors.textPrimary,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey.shade50,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16.0,
+            vertical: 16.0,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: const BorderSide(color: AssetFlowColors.primary, width: 2.0),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: AssetFlowColors.primary,
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: AssetFlowColors.primary),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
           ),
         ),
       ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: ButtonStyle(
-          minimumSize: MaterialStateProperty.all(const Size(double.infinity, 55)),
-          padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 16)),
-          foregroundColor: MaterialStateProperty.all(Colors.indigo), // Text color
-          alignment: Alignment.center, // Center the button content
-          textStyle: MaterialStateProperty.all(
-            const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.indigo)
-          ),
-          side: MaterialStateProperty.all(
-            const BorderSide(color: Colors.indigo, width: 1.5)
-          ),
-        ),
-      ),
-      
-      // Card theme for consistency
-      cardTheme: CardTheme(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-      ),
-      
-      // App bar theme - ensuring text is visible
-      appBarTheme: const AppBarTheme(
-        centerTitle: true,
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white, // Text color
-        titleTextStyle: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      
-      // Input decoration theme
-      inputDecorationTheme: const InputDecorationTheme(
-        labelStyle: TextStyle(color: Colors.indigo),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.indigo, width: 2.0),
-        ),
-      ),
-      
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(
-          fontSize: 32, 
-          fontWeight: FontWeight.bold, 
-          color: Colors.indigo, // Explicitly set for the app title
-        ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          color: Colors.black, // Default text color
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          color: Colors.black, // Default text color
-        ),
-      ),
+      home: AuthWrapper(),
     );
   }
 }

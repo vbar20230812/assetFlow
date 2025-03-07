@@ -27,7 +27,7 @@ class EmptyAssetsScreen extends StatelessWidget {
                 color: AssetFlowColors.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.account_balance_wallet,
                 size: 60,
                 color: AssetFlowColors.primary,
@@ -46,7 +46,7 @@ class EmptyAssetsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             // Description
-            Text(
+            const Text(
               'Start tracking your investments by adding your first project.',
               style: TextStyle(
                 fontSize: 16,

@@ -23,10 +23,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.myapp"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23 // Updated minSdk Version
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -40,6 +37,17 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+}
+
+dependencies {
+    // Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
+    
+    // Add the dependency for Firebase Analytics
+    implementation("com.google.firebase:firebase-analytics")
+    
+    // Add the Google Sign-In dependency
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 }
 
 flutter {

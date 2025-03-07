@@ -117,7 +117,7 @@ class _FeesStepState extends State<FeesStep> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Step title
-              Text(
+              const Text(
                 'Investment Fees',
                 style: TextStyle(
                   fontSize: 24,
@@ -127,7 +127,7 @@ class _FeesStepState extends State<FeesStep> {
               ),
               const SizedBox(height: 8),
               // Step description
-              Text(
+              const Text(
                 'Enter any fees associated with this investment.',
                 style: TextStyle(
                   fontSize: 16,
@@ -268,7 +268,7 @@ class _FeesStepState extends State<FeesStep> {
             children: [
               Text(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AssetFlowColors.textPrimary,
@@ -277,7 +277,7 @@ class _FeesStepState extends State<FeesStep> {
               const SizedBox(height: 2),
               Text(
                 description,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   color: AssetFlowColors.textSecondary,
                 ),
@@ -324,7 +324,7 @@ class _FeesStepState extends State<FeesStep> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   'Non-Refundable Fee',
                   style: TextStyle(
                     fontSize: 14,
@@ -346,7 +346,7 @@ class _FeesStepState extends State<FeesStep> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   'Refundable Fee',
                   style: TextStyle(
                     fontSize: 14,

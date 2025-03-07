@@ -76,7 +76,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         const SizedBox(height: 16),
                         
                         // App Tagline
-                        Text(
+                        const Text(
                           'Managing your investments with ease',
                           style: TextStyle(
                             fontSize: 16,
@@ -148,7 +148,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           ),
         ],
       ),
-      child: Center(
+      child: const Center(
         child: Icon(
           Icons.account_balance,
           size: 60,

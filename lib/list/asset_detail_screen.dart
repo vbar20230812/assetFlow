@@ -17,7 +17,7 @@ class AssetDetailScreen extends StatefulWidget {
   const AssetDetailScreen({super.key, required this.projectId});
 
   @override
-  _AssetDetailScreenState createState() => _AssetDetailScreenState();
+  State<AssetDetailScreen> createState() => _AssetDetailScreenState();
 }
 
 class _AssetDetailScreenState extends State<AssetDetailScreen> {
@@ -153,7 +153,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
               const SizedBox(width: 8),
               Text(
                 _project.company,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   color: AssetFlowColors.textSecondary,
                 ),
@@ -206,7 +206,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     color: AssetFlowColors.textSecondary,
                   ),
@@ -278,10 +278,10 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
           Icon(
             Icons.info_outline,
             size: 48,
-            color: AssetFlowColors.textSecondary.withOpacity(0.5),
+            color: AssetFlowColors.textSecondary.withAlpha(128),
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'No investment plans yet',
             style: TextStyle(
               fontSize: 16,
@@ -344,9 +344,18 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AssetFlowColors.getParticipationTypeColor(
-                      plan.participationType.displayName,
-                    ).withOpacity(0.1),
+                    color: Color.fromRGBO(
+                      AssetFlowColors.getParticipationTypeColor(
+                        plan.participationType.displayName,
+                      ).red,
+                      AssetFlowColors.getParticipationTypeColor(
+                        plan.participationType.displayName,
+                      ).green,
+                      AssetFlowColors.getParticipationTypeColor(
+                        plan.participationType.displayName,
+                      ).blue,
+                      0.1,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -363,7 +372,12 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AssetFlowColors.success.withOpacity(0.1),
+                      color: Color.fromRGBO(
+                        AssetFlowColors.success.red,
+                        AssetFlowColors.success.green,
+                        AssetFlowColors.success.blue,
+                        0.1,
+                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Row(
@@ -466,7 +480,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               color: AssetFlowColors.textSecondary,
             ),

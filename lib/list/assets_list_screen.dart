@@ -74,7 +74,7 @@ class _AssetsListScreenState extends State<AssetsListScreen> {
                     size: 60,
                   ),
                   const SizedBox(height: 16),
-                  Text(
+                  const Text(
                     'Error loading investments',
                     style: TextStyle(
                       fontSize: 18,
@@ -129,8 +129,8 @@ class _AssetsListScreenState extends State<AssetsListScreen> {
           );
         },
         backgroundColor: AssetFlowColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
         tooltip: 'Add Investment',
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -180,7 +180,7 @@ class _AssetsListScreenState extends State<AssetsListScreen> {
                   const SizedBox(width: 8),
                   Text(
                     project.company,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       color: AssetFlowColors.textSecondary,
                     ),
@@ -199,7 +199,7 @@ class _AssetsListScreenState extends State<AssetsListScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Duration: ${project.projectLengthMonths} months',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       color: AssetFlowColors.textSecondary,
                     ),
@@ -218,7 +218,7 @@ class _AssetsListScreenState extends State<AssetsListScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Created: ${DateUtil.formatDate(project.createdAt)}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       color: AssetFlowColors.textSecondary,
                     ),

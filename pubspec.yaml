@@ -13,10 +13,13 @@ dependencies:
     sdk: flutter
   
   # Firebase
-  firebase_core: ^2.14.0
-  firebase_auth: ^4.6.3
-  cloud_firestore: ^4.8.1
+  firebase_core: ^2.25.4
+  firebase_auth: ^4.17.4
+  cloud_firestore: ^4.11.0
   
+  #Authentication
+  #google_sign_in: ^6.1.4
+
   # Utilities
   intl: ^0.18.1
   logging: ^1.2.0

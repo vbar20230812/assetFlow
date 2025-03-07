@@ -34,7 +34,7 @@ AssetFlow is a comprehensive Flutter application designed to help clients track 
 
 1. Clone the repository
    ```
-   git clone https://github.com/your-username/asset_flow.git
+   git clone https://github.com/vbar20230812/asset_flow.git
    cd asset_flow
    ```
 

@@ -1,15 +1,21 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logging/logging.dart';
 
-/// Service class to manage Firebase authentication
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Logger _logger = Logger('AuthService');
 
-  /// Sign up with email and password
+  // Sign up with email and password
   Future<void> signUp(String email, String password) async {
     try {
       _logger.info('Attempting to sign up user: $email');
+      
+      // Log Firebase Auth instance state
+      _logger.info('Firebase Auth initialized: $_auth');
+      
+      // Add a slight delay before authentication calls
+      // This can help resolve race conditions with Firebase initialization
+      await Future.delayed(const Duration(milliseconds: 100));
       
       await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -39,21 +45,29 @@ class AuthService {
       throw Exception(errorMessage);
     } catch (e) {
       _logger.severe('Unexpected error during sign up: $e');
+      _logger.severe('Error type: ${e.runtimeType}');
+      if (e is Error) {
+        _logger.severe('Stack trace: ${e.stackTrace}');
+      }
       throw Exception('An unexpected error occurred. Please try again.');
     }
   }
 
-  /// Sign in with email and password
+  // Sign in with email and password
   Future<void> signIn(String email, String password) async {
     try {
       _logger.info('Attempting to sign in user: $email');
+      
+      // Add a slight delay before authentication calls
+      await Future.delayed(const Duration(milliseconds: 100));
       
       await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       
-      // Check if the current user is non-null
+      // We don't need to access the UserCredential result
+      // Just check if the current user is non-null
       if (_auth.currentUser != null) {
         _logger.info('User signed in successfully: ${_auth.currentUser?.uid}');
       } else {
@@ -81,30 +95,36 @@ class AuthService {
       throw Exception(errorMessage);
     } catch (e) {
       _logger.severe('Unexpected error during sign in: $e');
+      _logger.severe('Error type: ${e.runtimeType}');
+      if (e is Error) {
+        _logger.severe('Stack trace: ${e.stackTrace}');
+      }
       throw Exception('An unexpected error occurred. Please try again.');
     }
   }
 
-  /// Reset password by sending a password reset email
-  Future<void> resetPassword(String email) async {
+  // Send password reset email
+  Future<void> sendPasswordResetEmail(String email) async {
     try {
       _logger.info('Sending password reset email to: $email');
       
-      await _auth.sendPasswordResetEmail(email: email);
+      // Add a slight delay before authentication calls
+      await Future.delayed(const Duration(milliseconds: 100));
       
+      await _auth.sendPasswordResetEmail(email: email);
       _logger.info('Password reset email sent successfully');
     } on FirebaseAuthException catch (e) {
       _logger.severe('Firebase Auth Exception during password reset: ${e.code} - ${e.message}');
       String errorMessage;
       switch (e.code) {
         case 'user-not-found':
-          errorMessage = 'No user found with this email.';
+          errorMessage = 'No user found with this email address.';
           break;
         case 'invalid-email':
           errorMessage = 'The email address is not valid.';
           break;
         default:
-          errorMessage = 'Password reset failed: ${e.message}';
+          errorMessage = 'Failed to send password reset email: ${e.message}';
       }
       throw Exception(errorMessage);
     } catch (e) {
@@ -113,7 +133,7 @@ class AuthService {
     }
   }
 
-  /// Sign out the current user
+  // Sign out
   Future<void> signOut() async {
     try {
       await _auth.signOut();
@@ -124,11 +144,11 @@ class AuthService {
     }
   }
 
-  /// Get the current authenticated user
+  // Get current user
   User? getCurrentUser() {
     return _auth.currentUser;
   }
 
-  /// Stream of authentication state changes
+  // Stream of auth state changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 }
