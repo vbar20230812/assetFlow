@@ -1,9 +1,7 @@
-// /home/user/myapp/dataconnect-generated/dart/default_connector/default.dart
+// /home/user/myapp/lib/services/default.dart
+library;
 
-library ;
-
-// Import the local firebase_data_connect.dart
-import 'package:myapp/services/firebase_data_connect.dart'; // Adjust if your package name is different
+import 'firebase_data_connect.dart'; // This is correct for importing from the same directory
 import 'dart:convert';
 
 class DefaultConnector {

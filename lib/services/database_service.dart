@@ -1,6 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// In /home/user/myapp/lib/services/database_service.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logging/logging.dart';
+
+// Import files from the same directory
+import 'firebase_data_connect.dart';
+import 'default.dart'; // Import the local default.dart
 
 import '../models/asset.dart';
 import '../models/project.dart';
@@ -8,9 +12,9 @@ import '../models/plan.dart';
 
 /// Service class to handle all Firestore database operations
 class DatabaseService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Logger _logger = Logger('DatabaseService');
+  final DefaultConnector _connector = DefaultConnector.instance;
 
   /// Get the current user ID or throw an exception if not logged in
   String _getCurrentUserId() {
@@ -27,12 +31,11 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Creating project for user: $userId');
 
-      // Add the project to Firestore
-      final docRef = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('projects')
-          .add(project.toMap());
+      // Using the connector to add the project
+      final docRef = await _connector.dataConnect.addDocument(
+        'users/$userId/projects',
+        project.toMap(),
+      );
 
       _logger.info('Project created with ID: ${docRef.id}');
       
@@ -49,14 +52,11 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Adding plan to project $projectId for user: $userId');
 
-      // Add the plan to the plans subcollection
-      final docRef = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('projects')
-          .doc(projectId)
-          .collection('plans')
-          .add(plan.toMap());
+      // Using the connector to add the plan
+      final docRef = await _connector.dataConnect.addDocument(
+        'users/$userId/projects/$projectId/plans',
+        plan.toMap(),
+      );
 
       _logger.info('Plan created with ID: ${docRef.id}');
       
@@ -73,12 +73,11 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Updating project $projectId for user: $userId');
 
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('projects')
-          .doc(projectId)
-          .update(data);
+      await _connector.dataConnect.updateDocument(
+        'users/$userId/projects',
+        projectId,
+        data,
+      );
 
       _logger.info('Project updated successfully');
     } catch (e) {
@@ -93,29 +92,24 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Deleting project $projectId for user: $userId');
 
-      // Delete all plans in the project first
-      final plansSnapshot = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('projects')
-          .doc(projectId)
-          .collection('plans')
-          .get();
-
-      final batch = _firestore.batch();
+      // Get all plans for this project
+      final plansSnapshot = await _connector.dataConnect.getCollectionStream(
+        'users/$userId/projects/$projectId/plans',
+      ).first;
       
+      // Delete each plan
       for (var doc in plansSnapshot.docs) {
-        batch.delete(doc.reference);
+        await _connector.dataConnect.deleteDocument(
+          'users/$userId/projects/$projectId/plans',
+          doc.id,
+        );
       }
       
-      // Delete the project document
-      batch.delete(_firestore
-          .collection('users')
-          .doc(userId)
-          .collection('projects')
-          .doc(projectId));
-      
-      await batch.commit();
+      // Delete the project
+      await _connector.dataConnect.deleteDocument(
+        'users/$userId/projects',
+        projectId,
+      );
 
       _logger.info('Project and all its plans deleted successfully');
     } catch (e) {
@@ -130,16 +124,13 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Getting projects for user: $userId');
 
-      return _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('projects')
-          .snapshots()
-          .map((snapshot) {
-            return snapshot.docs.map((doc) {
-              return Project.fromFirestore(doc);
-            }).toList();
-          });
+      return _connector.dataConnect.getCollectionStream(
+        'users/$userId/projects',
+      ).map((snapshot) {
+        return snapshot.docs.map((doc) {
+          return Project.fromFirestore(doc);
+        }).toList();
+      });
     } catch (e) {
       _logger.severe('Error getting user projects: $e');
       rethrow;
@@ -152,12 +143,10 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Getting project $projectId for user: $userId');
 
-      final docSnapshot = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('projects')
-          .doc(projectId)
-          .get();
+      final docSnapshot = await _connector.dataConnect.getDocument(
+        'users/$userId/projects',
+        projectId,
+      );
 
       if (!docSnapshot.exists) {
         throw Exception('Project not found');
@@ -176,18 +165,13 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Getting plans for project $projectId, user: $userId');
 
-      return _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('projects')
-          .doc(projectId)
-          .collection('plans')
-          .snapshots()
-          .map((snapshot) {
-            return snapshot.docs.map((doc) {
-              return Plan.fromFirestore(doc);
-            }).toList();
-          });
+      return _connector.dataConnect.getCollectionStream(
+        'users/$userId/projects/$projectId/plans',
+      ).map((snapshot) {
+        return snapshot.docs.map((doc) {
+          return Plan.fromFirestore(doc);
+        }).toList();
+      });
     } catch (e) {
       _logger.severe('Error getting project plans: $e');
       rethrow;
@@ -200,14 +184,11 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Updating plan $planId in project $projectId for user: $userId');
 
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('projects')
-          .doc(projectId)
-          .collection('plans')
-          .doc(planId)
-          .update(data);
+      await _connector.dataConnect.updateDocument(
+        'users/$userId/projects/$projectId/plans',
+        planId,
+        data,
+      );
 
       _logger.info('Plan updated successfully');
     } catch (e) {
@@ -222,14 +203,10 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Deleting plan $planId from project $projectId for user: $userId');
 
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('projects')
-          .doc(projectId)
-          .collection('plans')
-          .doc(planId)
-          .delete();
+      await _connector.dataConnect.deleteDocument(
+        'users/$userId/projects/$projectId/plans',
+        planId,
+      );
 
       _logger.info('Plan deleted successfully');
     } catch (e) {

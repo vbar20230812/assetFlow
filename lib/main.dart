@@ -5,62 +5,30 @@ import 'firebase_options.dart';
 import 'auth/auth_wrapper.dart';
 import 'utils/theme_colors.dart';
 
+
 void main() async {
-  // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Firebase initialization with safe error handling
+  // Fix for duplicate Firebase initialization
   try {
-    // First try to get the default app
-    Firebase.app();
-    print("Using existing Firebase app");
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (e) {
-    try {
-      // If no app exists, initialize a new one
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      print("Initialized new Firebase app");
-    } catch (e) {
-      // Handle any initialization errors
-      print("Firebase initialization error: $e");
-      // You can add fallback behavior here if needed
+    // If the app is already initialized, catch the error but continue
+    if (e.toString().contains('duplicate-app')) {
+      print('Firebase already initialized, continuing...');
+    } else {
+      // If it's another error, rethrow it
+      print('Firebase initialization error: $e');
+      rethrow;
     }
   }
-  
-  // Enable logging
-  _setupLogging();
   
   // Run the app
   runApp(const AssetFlowApp());
 }
 
-/// Setup logging configuration
-void _setupLogging() {
-  Logger.root.level = Level.ALL;
-  Logger.root.onRecord.listen((record) {
-    final emoji = _getLogLevelEmoji(record.level);
-    print('$emoji ${record.time} | ${record.loggerName} | ${record.level.name}: ${record.message}');
-    
-    if (record.error != null) {
-      print('Error: ${record.error}');
-    }
-    
-    if (record.stackTrace != null) {
-      print('Stack trace: ${record.stackTrace}');
-    }
-  });
-}
-
-/// Get emoji for log level visualization
-String _getLogLevelEmoji(Level level) {
-  if (level == Level.SEVERE) return '🔴';
-  if (level == Level.WARNING) return '🟠';
-  if (level == Level.INFO) return '🔵';
-  if (level == Level.CONFIG) return '⚙️';
-  if (level == Level.FINE || level == Level.FINER || level == Level.FINEST) return '🟢';
-  return '📝';
-}
 
 /// Main application widget
 class AssetFlowApp extends StatelessWidget {
