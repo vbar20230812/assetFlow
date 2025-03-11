@@ -111,6 +111,7 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
                     // Plan step
                     PlanStep(
                       projectId: _project.id,
+                      project: _project, // Add this line
                       projectLength: _project.projectLengthMonths,
                       plans: _plans,
                       selectedPlan: _selectedPlan,

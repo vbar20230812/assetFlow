@@ -8,6 +8,7 @@ class Project {
   final int projectLengthMonths;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String currency; // Added currency field
 
   Project({
     required this.id,
@@ -16,6 +17,7 @@ class Project {
     required this.projectLengthMonths,
     required this.createdAt,
     required this.updatedAt,
+    this.currency = 'GBP', // Default to GBP
   });
 
   /// Create a new project with default values
@@ -23,6 +25,7 @@ class Project {
     required String name,
     required String company,
     required int projectLengthMonths,
+    String currency = 'GBP', // Default to GBP
   }) {
     return Project(
       id: '',
@@ -31,6 +34,7 @@ class Project {
       projectLengthMonths: projectLengthMonths,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      currency: currency,
     );
   }
 
@@ -45,6 +49,7 @@ class Project {
       projectLengthMonths: data['projectLengthMonths'] ?? 0,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      currency: data['currency'] ?? 'GBP', // Get currency from Firestore with default
     );
   }
 
@@ -58,6 +63,7 @@ class Project {
         ? Timestamp.fromDate(createdAt) 
         : Timestamp.fromDate(DateTime.now()),
       'updatedAt': Timestamp.fromDate(DateTime.now()),
+      'currency': currency, // Save currency to Firestore
     };
   }
 
@@ -69,6 +75,7 @@ class Project {
     int? projectLengthMonths,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? currency,
   }) {
     return Project(
       id: id ?? this.id,
@@ -77,6 +84,7 @@ class Project {
       projectLengthMonths: projectLengthMonths ?? this.projectLengthMonths,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      currency: currency ?? this.currency,
     );
   }
 }

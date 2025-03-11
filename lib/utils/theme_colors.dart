@@ -54,6 +54,13 @@ class AssetFlowColors {
   static const Color development = Color(0xFFF44336); // Red
   static const Color other = Color(0xFF757575); // Grey
 
+
+  static const Color secondary = Color(0xFF26A69A); // Added secondary color
+
+  // Background colors
+
+  static const Color cardBackground = Color(0xFFFFFFFF);
+
   /// Get a color based on participation type
   static Color getParticipationTypeColor(String type) {
     switch (type.toLowerCase()) {

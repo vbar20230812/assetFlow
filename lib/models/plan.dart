@@ -1,23 +1,42 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math' as math;
 
-/// Enum defining possible participation types in a plan
+/// Enum representing the distribution schedule of payments
+enum PaymentDistribution {
+  monthly,
+  quarterly,
+  semiannual,
+  annual,
+  exit;
+  
+  // Display name getter
+  String get displayName {
+    switch (this) {
+      case PaymentDistribution.monthly:
+        return 'Monthly';
+      case PaymentDistribution.quarterly:
+        return 'Quarterly';
+      case PaymentDistribution.semiannual:
+        return 'Semi-Annual';
+      case PaymentDistribution.annual:
+        return 'Annual';
+      case PaymentDistribution.exit:
+        return 'At Exit';
+    }
+  }
+  
+  // For backward compatibility
+  static const halfYearly = PaymentDistribution.semiannual;
+}
+
+/// Enum representing the type of participation in the investment
 enum ParticipationType {
   limitedPartner,
   lender,
   development,
-  other
-}
-
-/// Enum defining payment distribution frequencies
-enum PaymentDistribution {
-  quarterly,
-  halfYearly,
-  annual,
-  exit
-}
-
-/// Extension to convert enum values to strings for display and storage
-extension ParticipationTypeExtension on ParticipationType {
+  other;
+  
+  // Display name getter
   String get displayName {
     switch (this) {
       case ParticipationType.limitedPartner:
@@ -30,155 +49,192 @@ extension ParticipationTypeExtension on ParticipationType {
         return 'Other';
     }
   }
-
-  static ParticipationType fromString(String value) {
-    return ParticipationType.values.firstWhere(
-      (type) => type.displayName.toLowerCase() == value.toLowerCase(),
-      orElse: () => ParticipationType.other,
-    );
-  }
 }
 
-/// Extension to convert enum values to strings for display and storage
-extension PaymentDistributionExtension on PaymentDistribution {
-  String get displayName {
-    switch (this) {
-      case PaymentDistribution.quarterly:
-        return 'Quarterly';
-      case PaymentDistribution.halfYearly:
-        return 'Half Yearly';
-      case PaymentDistribution.annual:
-        return 'Annual';
-      case PaymentDistribution.exit:
-        return 'Exit';
-    }
-  }
-
-  static PaymentDistribution fromString(String value) {
-    return PaymentDistribution.values.firstWhere(
-      (type) => type.displayName.toLowerCase() == value.toLowerCase(),
-      orElse: () => PaymentDistribution.exit,
-    );
-  }
-}
-
-/// Model class representing an investment plan within a project
+/// Model representing an investment plan
 class Plan {
   final String id;
   final String projectId;
+  final String name;
+  final String description;
   final ParticipationType participationType;
+  final double interestRate;
   final double minimalAmount;
-  final int lengthMonths;
-  final double annualInterest;
+  final double maximalAmount;
   final PaymentDistribution paymentDistribution;
-  final double exitInterest;
+  final bool hasGuarantee;
   final bool isSelected;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final int lengthMonths;
+  final double exitInterest; // Added property for exit interest
 
-  Plan({
+  const Plan({
     required this.id,
     required this.projectId,
+    required this.name,
+    required this.description,
     required this.participationType,
+    required this.interestRate,
     required this.minimalAmount,
-    required this.lengthMonths,
-    required this.annualInterest,
+    required this.maximalAmount,
     required this.paymentDistribution,
-    this.exitInterest = 0,
+    required this.hasGuarantee,
+    required this.lengthMonths,
+    this.exitInterest = 0.0, // Default value
     this.isSelected = false,
-    required this.createdAt,
-    required this.updatedAt,
   });
 
   /// Create a new plan with default values
   factory Plan.create({
+    String? id,
     required String projectId,
-    required ParticipationType participationType,
-    required double minimalAmount,
-    required int lengthMonths,
-    required double annualInterest,
-    required PaymentDistribution paymentDistribution,
-    double exitInterest = 0,
+    required String name,
+    String description = '',
+    ParticipationType participationType = ParticipationType.limitedPartner,
+    double interestRate = 0.0,
+    double annualInterest = 0.0, // Added parameter for convenience
+    double minimalAmount = 0.0,
+    double maximalAmount = 0.0,
+    PaymentDistribution paymentDistribution = PaymentDistribution.quarterly,
+    bool hasGuarantee = false,
     bool isSelected = false,
+    int lengthMonths = 12,
+    double exitInterest = 0.0,
   }) {
-    return Plan(
-      id: '',
-      projectId: projectId,
-      participationType: participationType,
-      minimalAmount: minimalAmount,
-      lengthMonths: lengthMonths,
-      annualInterest: annualInterest,
-      paymentDistribution: paymentDistribution,
-      exitInterest: exitInterest,
-      isSelected: isSelected,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-  }
-
-  /// Create a Plan object from a Firestore document
-  factory Plan.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    // Use annualInterest parameter if provided, otherwise use interestRate
+    final double effectiveInterestRate = annualInterest > 0 ? annualInterest : interestRate;
     
     return Plan(
-      id: doc.id,
-      projectId: data['projectId'] ?? '',
-      participationType: ParticipationTypeExtension.fromString(data['participationType'] ?? ''),
-      minimalAmount: (data['minimalAmount'] ?? 0).toDouble(),
-      lengthMonths: data['lengthMonths'] ?? 0,
-      annualInterest: (data['annualInterest'] ?? 0).toDouble(),
-      paymentDistribution: PaymentDistributionExtension.fromString(data['paymentDistribution'] ?? ''),
-      exitInterest: (data['exitInterest'] ?? 0).toDouble(),
-      isSelected: data['isSelected'] ?? false,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      id: id ?? _generateId(),
+      projectId: projectId,
+      name: name,
+      description: description,
+      participationType: participationType,
+      interestRate: effectiveInterestRate,
+      minimalAmount: minimalAmount,
+      maximalAmount: maximalAmount > 0 ? maximalAmount : minimalAmount,
+      paymentDistribution: paymentDistribution,
+      hasGuarantee: hasGuarantee,
+      isSelected: isSelected,
+      lengthMonths: lengthMonths,
+      exitInterest: exitInterest,
     );
   }
 
-  /// Convert this Plan object to a Map for Firestore
-  Map<String, dynamic> toMap() {
-    return {
-      'projectId': projectId,
-      'participationType': participationType.displayName,
-      'minimalAmount': minimalAmount,
-      'lengthMonths': lengthMonths,
-      'annualInterest': annualInterest,
-      'paymentDistribution': paymentDistribution.displayName,
-      'exitInterest': exitInterest,
-      'isSelected': isSelected,
-      'createdAt': createdAt.isAfter(DateTime(2020)) 
-        ? Timestamp.fromDate(createdAt) 
-        : Timestamp.fromDate(DateTime.now()),
-      'updatedAt': Timestamp.fromDate(DateTime.now()),
-    };
-  }
-
-  /// Create a copy of this Plan with the given fields replaced with new values
+  /// Create a copy of this plan with optional updated properties
   Plan copyWith({
     String? id,
     String? projectId,
+    String? name,
+    String? description,
     ParticipationType? participationType,
+    double? interestRate,
+    double? annualInterest, // Added parameter
     double? minimalAmount,
-    int? lengthMonths,
-    double? annualInterest,
+    double? maximalAmount,
     PaymentDistribution? paymentDistribution,
-    double? exitInterest,
+    bool? hasGuarantee,
     bool? isSelected,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    int? lengthMonths,
+    double? exitInterest,
   }) {
+    // Handle the annualInterest parameter specifically
+    final double effectiveInterestRate = annualInterest ?? this.interestRate;
+    
     return Plan(
       id: id ?? this.id,
       projectId: projectId ?? this.projectId,
+      name: name ?? this.name,
+      description: description ?? this.description,
       participationType: participationType ?? this.participationType,
+      interestRate: effectiveInterestRate,
       minimalAmount: minimalAmount ?? this.minimalAmount,
-      lengthMonths: lengthMonths ?? this.lengthMonths,
-      annualInterest: annualInterest ?? this.annualInterest,
+      maximalAmount: maximalAmount ?? this.maximalAmount,
       paymentDistribution: paymentDistribution ?? this.paymentDistribution,
-      exitInterest: exitInterest ?? this.exitInterest,
+      hasGuarantee: hasGuarantee ?? this.hasGuarantee,
       isSelected: isSelected ?? this.isSelected,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      lengthMonths: lengthMonths ?? this.lengthMonths,
+      exitInterest: exitInterest ?? this.exitInterest,
     );
+  }
+
+  /// Get the annual interest rate
+  double get annualInterest {
+    // For regular plans, the interestRate is already annual
+    // For plans with distributions that are not annual, we calculate the annual equivalent
+    switch (paymentDistribution) {
+      case PaymentDistribution.monthly:
+        // Convert monthly rate to annual rate: (1 + r)^12 - 1
+        return (math.pow(1 + interestRate, 12) - 1) as double;
+      case PaymentDistribution.quarterly:
+        // Convert quarterly rate to annual rate: (1 + r)^4 - 1
+        return (math.pow(1 + interestRate, 4) - 1) as double;
+      case PaymentDistribution.semiannual:
+        // Convert semi-annual rate to annual rate: (1 + r)^2 - 1
+        return (math.pow(1 + interestRate, 2) - 1) as double;
+      case PaymentDistribution.annual:
+      case PaymentDistribution.exit:
+        // Annual rate is already annual
+        return interestRate;
+    }
+  }
+
+  /// Get the name of the participation type
+  String get participationTypeName => participationType.displayName;
+
+  /// Get the name of the payment distribution
+  String get paymentDistributionName => paymentDistribution.displayName;
+
+  /// Convert plan to a map for storage
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'projectId': projectId,
+      'name': name,
+      'description': description,
+      'participationType': participationType.index,
+      'interestRate': interestRate,
+      'minimalAmount': minimalAmount,
+      'maximalAmount': maximalAmount,
+      'paymentDistribution': paymentDistribution.index,
+      'hasGuarantee': hasGuarantee,
+      'isSelected': isSelected,
+      'lengthMonths': lengthMonths,
+      'exitInterest': exitInterest,
+    };
+  }
+
+  /// Create a plan from a map
+  factory Plan.fromMap(Map<String, dynamic> map) {
+    return Plan(
+      id: map['id'] ?? '',
+      projectId: map['projectId'] ?? '',
+      name: map['name'] ?? '',
+      description: map['description'] ?? '',
+      participationType: ParticipationType.values[map['participationType'] ?? 0],
+      interestRate: (map['interestRate'] ?? 0.0).toDouble(),
+      minimalAmount: (map['minimalAmount'] ?? 0.0).toDouble(),
+      maximalAmount: (map['maximalAmount'] ?? 0.0).toDouble(),
+      paymentDistribution: PaymentDistribution.values[map['paymentDistribution'] ?? 0],
+      hasGuarantee: map['hasGuarantee'] ?? false,
+      isSelected: map['isSelected'] ?? false,
+      lengthMonths: map['lengthMonths'] ?? 12,
+      exitInterest: (map['exitInterest'] ?? 0.0).toDouble(),
+    );
+  }
+
+  /// Create a plan from a Firestore document
+  factory Plan.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    return Plan.fromMap({
+      'id': doc.id,
+      ...data,
+    });
+  }
+
+  /// Generate a random ID
+  static String _generateId() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final random = math.Random();
+    return List.generate(20, (index) => chars[random.nextInt(chars.length)]).join();
   }
 }

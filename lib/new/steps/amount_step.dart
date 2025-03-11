@@ -161,20 +161,23 @@ class _AmountStepState extends State<AmountStep> {
     DateTime newFirstPaymentDate;
     
     switch (_selectedPlan!.paymentDistribution) {
-      case PaymentDistribution.quarterly:
-        newFirstPaymentDate = DateUtil.addMonths(_startDate, 3);
-        break;
-      case PaymentDistribution.halfYearly:
-        newFirstPaymentDate = DateUtil.addMonths(_startDate, 6);
-        break;
-      case PaymentDistribution.annual:
-        newFirstPaymentDate = DateUtil.addMonths(_startDate, 12);
-        break;
-      case PaymentDistribution.exit:
-        // For exit distribution, add the project length to the start date
-        newFirstPaymentDate = DateUtil.addMonths(_startDate, _selectedPlan!.lengthMonths);
-        break;
-    }
+  case PaymentDistribution.monthly:
+    newFirstPaymentDate = DateUtil.addMonths(_startDate, 1);
+    break;
+  case PaymentDistribution.quarterly:
+    newFirstPaymentDate = DateUtil.addMonths(_startDate, 3);
+    break;
+  case PaymentDistribution.semiannual:  // Use semiannual instead of halfYearly
+    newFirstPaymentDate = DateUtil.addMonths(_startDate, 6);
+    break;
+  case PaymentDistribution.annual:
+    newFirstPaymentDate = DateUtil.addMonths(_startDate, 12);
+    break;
+  case PaymentDistribution.exit:
+    // For exit distribution, add the project length to the start date
+    newFirstPaymentDate = DateUtil.addMonths(_startDate, _selectedPlan!.lengthMonths);
+    break;
+}
     
     setState(() {
       _firstPaymentDate = newFirstPaymentDate;

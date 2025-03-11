@@ -4,6 +4,7 @@ import 'package:logging/logging.dart';
 
 import '../../models/project.dart';
 import '../../utils/theme_colors.dart';
+import '../../utils/formatter_util.dart';
 
 /// First step of the investment wizard for entering project details
 class ProjectStep extends StatefulWidget {
@@ -27,6 +28,7 @@ class _ProjectStepState extends State<ProjectStep> {
   late TextEditingController _nameController;
   late TextEditingController _companyController;
   late TextEditingController _lengthController;
+  late String _selectedCurrency;
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _ProjectStepState extends State<ProjectStep> {
     _lengthController = TextEditingController(
       text: widget.project.projectLengthMonths.toString()
     );
+    _selectedCurrency = widget.project.currency;
     
     // Listen for changes and update the project
     _nameController.addListener(_updateProject);
@@ -68,6 +71,7 @@ class _ProjectStepState extends State<ProjectStep> {
       name: _nameController.text,
       company: _companyController.text,
       projectLengthMonths: length,
+      currency: _selectedCurrency,
     );
     
     widget.onProjectUpdated(updatedProject);
@@ -175,6 +179,85 @@ class _ProjectStepState extends State<ProjectStep> {
                   return null;
                 },
               ),
+              const SizedBox(height: 20),
+              
+              // Currency selector
+              DropdownButtonFormField<String>(
+                value: _selectedCurrency,
+                decoration: const InputDecoration(
+                  labelText: 'Currency',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.attach_money),
+                  helperText: 'Select the currency for this project',
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: 'GBP',
+                    child: Row(
+                      children: [
+                        Text('£', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        SizedBox(width: 8),
+                        Text('British Pound (GBP)'),
+                      ],
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'USD',
+                    child: Row(
+                      children: [
+                        Text('\$', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        SizedBox(width: 8),
+                        Text('US Dollar (USD)'),
+                      ],
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'EUR',
+                    child: Row(
+                      children: [
+                        Text('€', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        SizedBox(width: 8),
+                        Text('Euro (EUR)'),
+                      ],
+                    ),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedCurrency = value;
+                      _updateProject();
+                    });
+                  }
+                },
+              ),
+              
+              // Preview of currency formatting
+              if (_selectedCurrency.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Card(
+                    color: AssetFlowColors.primary.withOpacity(0.1),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: AssetFlowColors.primary),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Example: ${FormatterUtil.formatCurrency(50000, currencyCode: _selectedCurrency)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: AssetFlowColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

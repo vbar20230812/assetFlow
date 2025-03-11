@@ -4,7 +4,7 @@ import 'package:logging/logging.dart';
 import '../utils/theme_colors.dart';
 import '../new/add_investment_screen.dart';
 
-/// Screen displayed when the user has no investments yet
+/// Screen that displays when the user has no assets/investments
 class EmptyAssetsScreen extends StatelessWidget {
   static final Logger _logger = Logger('EmptyAssetsScreen');
 
@@ -12,29 +12,21 @@ class EmptyAssetsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    _logger.info('EmptyAssetsScreen built');
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Illustration
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: AssetFlowColors.primary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.account_balance_wallet,
-                size: 60,
-                color: AssetFlowColors.primary,
-              ),
+            // Empty state illustration
+            Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 120,
+              color: AssetFlowColors.textSecondary.withAlpha(128),
             ),
-            const SizedBox(height: 32),
-            // Title
+            const SizedBox(height: 24),
+            
+            // Title text
             const Text(
               'No Investments Yet',
               style: TextStyle(
@@ -45,9 +37,10 @@ class EmptyAssetsScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            // Description
+            
+            // Description text
             const Text(
-              'Start tracking your investments by adding your first project.',
+              'Track your investments, manage distribution plans, and monitor returns all in one place.',
               style: TextStyle(
                 fontSize: 16,
                 color: AssetFlowColors.textSecondary,
@@ -55,22 +48,28 @@ class EmptyAssetsScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            // Add investment button
-            ElevatedButton.icon(
-              onPressed: () {
-                _logger.info('Add first investment button pressed');
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddInvestmentScreen()),
-                );
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Add Your First Investment'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AssetFlowColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                minimumSize: const Size(240, 48),
+            
+            // Add first investment button
+            SizedBox(
+              width: 240,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _logger.info('Add first investment button pressed');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AddInvestmentScreen()),
+                  );
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Add First Investment'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AssetFlowColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
               ),
             ),
           ],

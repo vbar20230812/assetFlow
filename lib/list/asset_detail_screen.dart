@@ -7,8 +7,9 @@ import '../services/database_service.dart';
 import '../utils/theme_colors.dart';
 import '../utils/date_util.dart';
 import '../utils/formatter_util.dart';
-import '../widgets/asset_flow_loader.dart';
 import '../widgets/asset_flow_loading_widget.dart';
+import 'plan_detail_widget.dart';
+import 'plan_form_dialog.dart';
 
 /// Screen that displays detailed information about a single asset/investment
 class AssetDetailScreen extends StatefulWidget {
@@ -304,22 +305,6 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
 
   /// Build a card for a single plan
   Widget _buildPlanCard(Plan plan) {
-    String paymentSchedule = '';
-    switch (plan.paymentDistribution) {
-      case PaymentDistribution.quarterly:
-        paymentSchedule = 'Quarterly payments';
-        break;
-      case PaymentDistribution.halfYearly:
-        paymentSchedule = 'Half-yearly payments';
-        break;
-      case PaymentDistribution.annual:
-        paymentSchedule = 'Annual payments';
-        break;
-      case PaymentDistribution.exit:
-        paymentSchedule = 'Payment at exit';
-        break;
-    }
-
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -338,93 +323,11 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Plan type and selected indicator
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Color.fromRGBO(
-                      AssetFlowColors.getParticipationTypeColor(
-                        plan.participationType.displayName,
-                      ).red,
-                      AssetFlowColors.getParticipationTypeColor(
-                        plan.participationType.displayName,
-                      ).green,
-                      AssetFlowColors.getParticipationTypeColor(
-                        plan.participationType.displayName,
-                      ).blue,
-                      0.1,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    plan.participationType.displayName,
-                    style: TextStyle(
-                      color: AssetFlowColors.getParticipationTypeColor(
-                        plan.participationType.displayName,
-                      ),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                if (plan.isSelected)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Color.fromRGBO(
-                        AssetFlowColors.success.red,
-                        AssetFlowColors.success.green,
-                        AssetFlowColors.success.blue,
-                        0.1,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.check_circle,
-                          size: 16,
-                          color: AssetFlowColors.success,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Selected',
-                          style: TextStyle(
-                            color: AssetFlowColors.success,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+            PlanHeader(plan: plan),
             const SizedBox(height: 16),
             
             // Plan details
-            _buildPlanDetail(
-              label: 'Minimum Investment',
-              value: FormatterUtil.formatCurrency(plan.minimalAmount),
-            ),
-            _buildPlanDetail(
-              label: 'Annual Interest Rate',
-              value: '${plan.annualInterest.toStringAsFixed(2)}%',
-            ),
-            _buildPlanDetail(
-              label: 'Length',
-              value: '${plan.lengthMonths} months',
-            ),
-            _buildPlanDetail(
-              label: 'Payment Schedule',
-              value: paymentSchedule,
-            ),
-            if (plan.paymentDistribution != PaymentDistribution.exit)
-              _buildPlanDetail(
-                label: 'Exit Interest',
-                value: '${plan.exitInterest.toStringAsFixed(2)}%',
-              ),
+            PlanDetailsSection(plan: plan),
             
             const SizedBox(height: 16),
             
@@ -446,13 +349,17 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Edit button
-                IconButton(
+                // Edit button - Made more prominent to fix visibility issue
+                ElevatedButton.icon(
                   icon: const Icon(Icons.edit),
                   onPressed: () => _editPlan(plan),
-                  tooltip: 'Edit Plan',
-                  color: AssetFlowColors.textSecondary,
+                  label: const Text('Edit'),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: AssetFlowColors.secondary,
+                  ),
                 ),
+                const SizedBox(width: 8),
                 // Delete button
                 IconButton(
                   icon: const Icon(Icons.delete),
@@ -464,36 +371,6 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Build a plan detail item with label and value
-  Widget _buildPlanDetail({
-    required String label,
-    required String value,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AssetFlowColors.textSecondary,
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: AssetFlowColors.textPrimary,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -572,18 +449,125 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   /// Add a new plan
   void _addPlan() {
     _logger.info('Add plan button pressed');
-    // TODO: Navigate to add plan screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add plan feature coming soon')),
+    
+// With this code that includes the required 'name' and 'projectId' parameters:
+    final newPlan = Plan.create(
+      name: 'New Plan',      // Add this
+      projectId: widget.projectId,  // Fix to use widget.projectId
+      annualInterest: 10.0,  // Your existing parameters
+      //projectId: _project.id,
+      participationType: ParticipationType.limitedPartner,
+      minimalAmount: 10000,
+      lengthMonths: _project.projectLengthMonths,
+      //annualInterest: 10.0,
+      paymentDistribution: PaymentDistribution.quarterly,
+      exitInterest: 5.0,
+    );
+    
+    // Show dialog to add the plan
+    showDialog(
+        context: context,
+        builder: (context) => PlanFormDialog(
+          title: 'Add Investment Plan',
+          plan: newPlan,
+          project: _project, // Add this line
+          projectLength: _project.projectLengthMonths,
+          onSave: (Plan plan) async {
+          try {
+            setState(() {
+              _isLoading = true;
+            });
+            
+            // Add the plan to the database
+            final planId = await _databaseService.addPlanToProject(
+              _project.id,
+              plan,
+            );
+            
+            _logger.info('Plan added successfully: $planId');
+            
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Plan added successfully')),
+              );
+            }
+          } catch (e) {
+            _logger.severe('Error adding plan: $e');
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error adding plan: $e')),
+              );
+            }
+          }
+        },
+      ),
     );
   }
 
-  /// Edit a plan
+  /// Edit a plan - Fixed to properly use dialog
   void _editPlan(Plan plan) {
     _logger.info('Edit plan button pressed: ${plan.id}');
-    // TODO: Navigate to edit plan screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit plan feature coming soon')),
+    
+    // Show dialog to edit the plan
+    showDialog(
+      context: context,
+      builder: (context) => PlanFormDialog(
+        title: 'Edit Investment Plan',
+        plan: plan,
+        project: _project, // Add this line
+        projectLength: _project.projectLengthMonths,
+        onSave: (updatedPlan) async {
+          try {
+            setState(() {
+              _isLoading = true;
+            });
+            
+            // Prepare data to update
+            final data = {
+              'minimalAmount': updatedPlan.minimalAmount,
+              'annualInterest': updatedPlan.annualInterest,
+              'exitInterest': updatedPlan.exitInterest,
+              'lengthMonths': updatedPlan.lengthMonths,
+              'participationType': updatedPlan.participationType.toString(),
+              'paymentDistribution': updatedPlan.paymentDistribution.toString(),
+              'isSelected': updatedPlan.isSelected,
+              'updatedAt': DateTime.now().millisecondsSinceEpoch,
+            };
+            
+            // Update in Firestore
+            await _databaseService.updatePlan(_project.id, plan.id, data);
+            
+            _logger.info('Plan updated successfully');
+            
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Plan updated successfully')),
+              );
+            }
+          } catch (e) {
+            _logger.severe('Error updating plan: $e');
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error updating plan: $e')),
+              );
+            }
+          }
+        },
+      ),
     );
   }
 
