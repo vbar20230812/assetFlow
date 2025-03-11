@@ -84,6 +84,13 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
             ? const Text('Investment Details')
             : Text(_project.name),
         actions: [
+          // Archive/Unarchive button
+          if (!_isLoading)
+            IconButton(
+              icon: Icon(_project.isArchived ? Icons.unarchive : Icons.archive),
+              onPressed: _toggleArchiveStatus,
+              tooltip: _project.isArchived ? 'Unarchive' : 'Archive',
+            ),
           // Edit button
           IconButton(
             icon: const Icon(Icons.edit),
@@ -111,6 +118,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   /// Build the project details content
   Widget _buildProjectDetails() {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(), // Ensure scrolling is always enabled
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -121,6 +129,9 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
           
           // Plans section
           _buildPlansSection(),
+          
+          // Add some bottom padding for better scrolling
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -134,14 +145,37 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Project name and company
-          Text(
-            _project.name,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AssetFlowColors.primary,
-            ),
+          // Project name and archived badge if needed
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _project.name,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: _project.isArchived
+                        ? AssetFlowColors.textSecondary
+                        : AssetFlowColors.primary,
+                  ),
+                ),
+              ),
+              if (_project.isArchived)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Archived',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AssetFlowColors.textSecondary,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 8),
           Row(
@@ -169,6 +203,13 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
             label: 'Project Length',
             value: '${_project.projectLengthMonths} months',
           ),
+          // Only show currency if it exists in your Project model
+          if (_project.currency.isNotEmpty)
+            _buildDetailItem(
+              icon: Icons.attach_money,
+              label: 'Currency',
+              value: _project.currency,
+            ),
           _buildDetailItem(
             icon: Icons.date_range,
             label: 'Created On',
@@ -235,6 +276,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Section title
           Row(
@@ -259,11 +301,25 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
           ),
           const SizedBox(height: 16),
           
-          // Plans list
+          // Plans list - use a limited height container if many plans are present
           _plans.isEmpty
               ? _buildEmptyPlansMessage()
-              : Column(
-                  children: _plans.map((plan) => _buildPlanCard(plan)).toList(),
+              : ConstrainedBox(
+                  constraints: BoxConstraints(
+                    // If many plans, limit height but ensure it's scrollable
+                    maxHeight: _plans.length > 2 
+                        ? MediaQuery.of(context).size.height * 0.5 
+                        : double.infinity,
+                  ),
+                  child: ListView.builder(
+                    // Use different physics based on number of plans
+                    physics: _plans.length > 2
+                        ? const AlwaysScrollableScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: _plans.length,
+                    itemBuilder: (context, index) => _buildPlanCard(_plans[index]),
+                  ),
                 ),
         ],
       ),
@@ -375,6 +431,74 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     );
   }
 
+  /// Toggle archive status of a project
+  void _toggleArchiveStatus() {
+    _logger.info('Toggle archive status for project: ${_project.id}');
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_project.isArchived ? 'Unarchive Investment' : 'Archive Investment'),
+        content: Text(
+          _project.isArchived
+              ? 'Are you sure you want to unarchive "${_project.name}"?'
+              : 'Are you sure you want to archive "${_project.name}"? It will be moved to the end of the list.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              setState(() {
+                _isLoading = true;
+              });
+              
+              try {
+                if (_project.isArchived) {
+                  await _databaseService.unarchiveProject(_project.id);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Investment unarchived successfully')),
+                    );
+                  }
+                } else {
+                  await _databaseService.archiveProject(_project.id);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Investment archived successfully')),
+                    );
+                  }
+                }
+                
+                // Reload the project data to show updated state
+                await _loadProjectData();
+              } catch (e) {
+                _logger.severe('Error toggling archive status: $e');
+                if (mounted) {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
+                }
+              }
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: _project.isArchived ? AssetFlowColors.primary : AssetFlowColors.secondary,
+            ),
+            child: Text(_project.isArchived ? 'Unarchive' : 'Archive'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Edit the project
   void _editProject() {
     _logger.info('Edit project button pressed: ${widget.projectId}');
@@ -450,16 +574,13 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   void _addPlan() {
     _logger.info('Add plan button pressed');
     
-// With this code that includes the required 'name' and 'projectId' parameters:
     final newPlan = Plan.create(
-      name: 'New Plan',      // Add this
-      projectId: widget.projectId,  // Fix to use widget.projectId
-      annualInterest: 10.0,  // Your existing parameters
-      //projectId: _project.id,
+      name: 'New Plan',
+      projectId: widget.projectId,
+      annualInterest: 10.0,
       participationType: ParticipationType.limitedPartner,
       minimalAmount: 10000,
       lengthMonths: _project.projectLengthMonths,
-      //annualInterest: 10.0,
       paymentDistribution: PaymentDistribution.quarterly,
       exitInterest: 5.0,
     );
@@ -470,7 +591,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
         builder: (context) => PlanFormDialog(
           title: 'Add Investment Plan',
           plan: newPlan,
-          project: _project, // Add this line
+          project: _project,
           projectLength: _project.projectLengthMonths,
           onSave: (Plan plan) async {
           try {
@@ -511,7 +632,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     );
   }
 
-  /// Edit a plan - Fixed to properly use dialog
+  /// Edit a plan
   void _editPlan(Plan plan) {
     _logger.info('Edit plan button pressed: ${plan.id}');
     
@@ -521,7 +642,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
       builder: (context) => PlanFormDialog(
         title: 'Edit Investment Plan',
         plan: plan,
-        project: _project, // Add this line
+        project: _project,
         projectLength: _project.projectLengthMonths,
         onSave: (updatedPlan) async {
           try {

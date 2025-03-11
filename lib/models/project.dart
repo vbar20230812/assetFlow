@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Model class representing a real estate project
 class Project {
   final String id;
   final String name;
@@ -8,7 +7,8 @@ class Project {
   final int projectLengthMonths;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final String currency; // Added currency field
+  final bool isArchived;
+  final String currency;
 
   Project({
     required this.id,
@@ -17,26 +17,9 @@ class Project {
     required this.projectLengthMonths,
     required this.createdAt,
     required this.updatedAt,
-    this.currency = 'GBP', // Default to GBP
+    this.isArchived = false,
+    this.currency = 'USD',
   });
-
-  /// Create a new project with default values
-  factory Project.create({
-    required String name,
-    required String company,
-    required int projectLengthMonths,
-    String currency = 'GBP', // Default to GBP
-  }) {
-    return Project(
-      id: '',
-      name: name,
-      company: company,
-      projectLengthMonths: projectLengthMonths,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      currency: currency,
-    );
-  }
 
   /// Create a Project object from a Firestore document
   factory Project.fromFirestore(DocumentSnapshot doc) {
@@ -47,9 +30,14 @@ class Project {
       name: data['name'] ?? '',
       company: data['company'] ?? '',
       projectLengthMonths: data['projectLengthMonths'] ?? 0,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
-      currency: data['currency'] ?? 'GBP', // Get currency from Firestore with default
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
+          : DateTime.now(),
+      updatedAt: data['updatedAt'] != null
+          ? (data['updatedAt'] as Timestamp).toDate()
+          : DateTime.now(),
+      isArchived: data['isArchived'] ?? false,
+      currency: data['currency'] ?? 'USD',
     );
   }
 
@@ -59,12 +47,31 @@ class Project {
       'name': name,
       'company': company,
       'projectLengthMonths': projectLengthMonths,
-      'createdAt': createdAt.isAfter(DateTime(2020)) 
-        ? Timestamp.fromDate(createdAt) 
-        : Timestamp.fromDate(DateTime.now()),
-      'updatedAt': Timestamp.fromDate(DateTime.now()),
-      'currency': currency, // Save currency to Firestore
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'isArchived': isArchived,
+      'currency': currency,
     };
+  }
+
+  /// Create a new Project with default values
+  factory Project.create({
+    required String name,
+    required String company,
+    required int projectLengthMonths,
+    String currency = 'USD',
+  }) {
+    final now = DateTime.now();
+    return Project(
+      id: '',
+      name: name,
+      company: company,
+      projectLengthMonths: projectLengthMonths,
+      createdAt: now,
+      updatedAt: now,
+      isArchived: false,
+      currency: currency,
+    );
   }
 
   /// Create a copy of this Project with the given fields replaced with new values
@@ -75,6 +82,7 @@ class Project {
     int? projectLengthMonths,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isArchived,
     String? currency,
   }) {
     return Project(
@@ -84,6 +92,7 @@ class Project {
       projectLengthMonths: projectLengthMonths ?? this.projectLengthMonths,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isArchived: isArchived ?? this.isArchived,
       currency: currency ?? this.currency,
     );
   }

@@ -1,6 +1,7 @@
 // In /home/user/myapp/lib/services/database_service.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logging/logging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Import files from the same directory
 import 'firebase_data_connect.dart';
@@ -120,22 +121,34 @@ class DatabaseService {
 
   /// Get all projects for the current user
   Stream<List<Project>> getUserProjects() {
-    try {
-      final userId = _getCurrentUserId();
-      _logger.info('Getting projects for user: $userId');
+  try {
+    final userId = _getCurrentUserId();
+    _logger.info('Getting projects for user: $userId');
 
-      return _connector.dataConnect.getCollectionStream(
-        'users/$userId/projects',
-      ).map((snapshot) {
-        return snapshot.docs.map((doc) {
-          return Project.fromFirestore(doc);
-        }).toList();
+    return _connector.dataConnect.getCollectionStream(
+      'users/$userId/projects',
+    ).map((snapshot) {
+      final projects = snapshot.docs.map((doc) {
+        return Project.fromFirestore(doc);
+      }).toList();
+      
+      // Sort: non-archived first, then archived
+      projects.sort((a, b) {
+        if (a.isArchived == b.isArchived) {
+          // If archive status is the same, sort by date (newest first)
+          return b.updatedAt.compareTo(a.updatedAt);
+        }
+        // Non-archived comes before archived
+        return a.isArchived ? 1 : -1;
       });
-    } catch (e) {
-      _logger.severe('Error getting user projects: $e');
-      rethrow;
-    }
+      
+      return projects;
+    });
+  } catch (e) {
+    _logger.severe('Error getting user projects: $e');
+    rethrow;
   }
+}
 
   /// Get a single project by ID
   Future<Project> getProject(String projectId) async {
@@ -214,4 +227,50 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  // Add these methods to the DatabaseService class
+
+/// Archive a project
+Future<void> archiveProject(String projectId) async {
+  try {
+    final userId = _getCurrentUserId();
+    _logger.info('Archiving project $projectId for user: $userId');
+
+    await _connector.dataConnect.updateDocument(
+      'users/$userId/projects',
+      projectId,
+      {'isArchived': true, 'updatedAt': FieldValue.serverTimestamp()},
+    );
+
+    _logger.info('Project archived successfully');
+  } catch (e) {
+    _logger.severe('Error archiving project: $e');
+    rethrow;
+  }
+}
+
+/// Unarchive a project
+Future<void> unarchiveProject(String projectId) async {
+  try {
+    final userId = _getCurrentUserId();
+    _logger.info('Unarchiving project $projectId for user: $userId');
+
+    await _connector.dataConnect.updateDocument(
+      'users/$userId/projects',
+      projectId,
+      {'isArchived': false, 'updatedAt': FieldValue.serverTimestamp()},
+    );
+
+    _logger.info('Project unarchived successfully');
+  } catch (e) {
+    _logger.severe('Error unarchiving project: $e');
+    rethrow;
+  }
+}
+
+// Replace your existing getUserProjects method with this updated version
+
+
+// Update the getUserProjects method to sort by isArchived
+
 }
