@@ -6,12 +6,12 @@ import '../../utils/theme_colors.dart';
 import '../../utils/formatter_util.dart';
 import '../../list/plan_form_dialog.dart';
 
-import '../../models/project.dart';  // Add this import
+import '../../models/project.dart';
 
 /// Widget for the Plan step in the add investment wizard
 class PlanStep extends StatefulWidget {
   final String projectId;
-  final Project project; // Add this field
+  final Project project;
   final int projectLength;
   final List<Plan> plans;
   final Plan? selectedPlan;
@@ -23,7 +23,7 @@ class PlanStep extends StatefulWidget {
   const PlanStep({
     super.key,
     required this.projectId,
-    required this.project, // Add this required parameter
+    required this.project,
     required this.projectLength,
     required this.plans,
     required this.selectedPlan,
@@ -227,39 +227,6 @@ class _PlanStepState extends State<PlanStep> {
                 ],
               ),
               
-              // Guarantee badge if applicable
-              if (plan.hasGuarantee)
-                Container(
-                  margin: const EdgeInsets.only(top: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AssetFlowColors.success.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(
-                        Icons.verified_outlined,
-                        size: 16,
-                        color: AssetFlowColors.success,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Guaranteed',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AssetFlowColors.success,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              
               const SizedBox(height: 16),
               
               // Plan details
@@ -276,13 +243,6 @@ class _PlanStepState extends State<PlanStep> {
                     'Minimal Investment:',
                     FormatterUtil.formatCurrency(plan.minimalAmount),
                   ),
-                  
-                  // Maximal investment (if applicable)
-                  if (plan.maximalAmount > plan.minimalAmount)
-                    _buildDetailRow(
-                      'Maximal Investment:',
-                      FormatterUtil.formatCurrency(plan.maximalAmount),
-                    ),
                   
                   // Payment distribution
                   _buildDetailRow(
@@ -413,13 +373,12 @@ class _PlanStepState extends State<PlanStep> {
     // Create a new plan with default values
     final newPlan = Plan.create(
       projectId: widget.projectId,
-      name: 'New Plan',
+      name: '', // Empty name will auto-generate based on type and rate
       participationType: ParticipationType.limitedPartner,
-      interestRate: 0.075, // 7.5%
+      annualInterest: 7.5, // 7.5%
       minimalAmount: 25000,
-      maximalAmount: 100000,
       paymentDistribution: PaymentDistribution.quarterly,
-      hasGuarantee: false,
+      lengthMonths: widget.projectLength,
     );
     
     _showPlanDialog(
@@ -446,14 +405,12 @@ class _PlanStepState extends State<PlanStep> {
     showDialog(
         context: context,
         builder: (context) => PlanFormDialog(
-          title: 'Add Plan',
+          title: plan.id.isEmpty ? 'Add Plan' : 'Edit Plan',
           plan: plan,
-          project: widget.project, // Now this will work
+          project: widget.project,
           projectLength: widget.projectLength,
-          onSave: (updatedPlan) {
-            onSave(updatedPlan);
-        },
-      ),
+          onSave: onSave,
+        ),
     );
   }
 

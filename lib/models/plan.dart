@@ -58,14 +58,12 @@ class Plan {
   final String name;
   final String description;
   final ParticipationType participationType;
-  final double interestRate;
+  final double interestRate; // This is the raw interest rate stored in DB
   final double minimalAmount;
-  final double maximalAmount;
   final PaymentDistribution paymentDistribution;
-  final bool hasGuarantee;
   final bool isSelected;
   final int lengthMonths;
-  final double exitInterest; // Added property for exit interest
+  final double exitInterest; // Additional interest paid at exit
 
   const Plan({
     required this.id,
@@ -75,11 +73,9 @@ class Plan {
     required this.participationType,
     required this.interestRate,
     required this.minimalAmount,
-    required this.maximalAmount,
     required this.paymentDistribution,
-    required this.hasGuarantee,
     required this.lengthMonths,
-    this.exitInterest = 0.0, // Default value
+    this.exitInterest = 0.0,
     this.isSelected = false,
   });
 
@@ -87,36 +83,43 @@ class Plan {
   factory Plan.create({
     String? id,
     required String projectId,
-    required String name,
+    String? name,
     String description = '',
     ParticipationType participationType = ParticipationType.limitedPartner,
     double interestRate = 0.0,
-    double annualInterest = 0.0, // Added parameter for convenience
+    double annualInterest = 0.0, // This is for convenience when input is in percentage
     double minimalAmount = 0.0,
-    double maximalAmount = 0.0,
     PaymentDistribution paymentDistribution = PaymentDistribution.quarterly,
-    bool hasGuarantee = false,
     bool isSelected = false,
     int lengthMonths = 12,
     double exitInterest = 0.0,
   }) {
     // Use annualInterest parameter if provided, otherwise use interestRate
-    final double effectiveInterestRate = annualInterest > 0 ? annualInterest : interestRate;
+    // If annualInterest is provided, it's assumed to be in percentage (e.g., 15.0 for 15%)
+    // So we convert it to decimal (0.15) for storage
+    final double effectiveInterestRate = annualInterest > 0 ? annualInterest / 100 : interestRate;
+    
+    // For exit payment distribution, set exitInterest equal to interestRate
+    final double effectiveExitInterest = paymentDistribution == PaymentDistribution.exit 
+        ? effectiveInterestRate 
+        : (exitInterest > 0 ? exitInterest : 0.0);
+    
+    // Generate default name if not provided
+    final String planName = name ?? 
+        '${participationType.displayName} ${(annualInterest > 0 ? annualInterest : (interestRate * 100)).toStringAsFixed(1)}%';
     
     return Plan(
       id: id ?? _generateId(),
       projectId: projectId,
-      name: name,
+      name: planName,
       description: description,
       participationType: participationType,
       interestRate: effectiveInterestRate,
       minimalAmount: minimalAmount,
-      maximalAmount: maximalAmount > 0 ? maximalAmount : minimalAmount,
       paymentDistribution: paymentDistribution,
-      hasGuarantee: hasGuarantee,
       isSelected: isSelected,
       lengthMonths: lengthMonths,
-      exitInterest: exitInterest,
+      exitInterest: effectiveExitInterest,
     );
   }
 
@@ -128,54 +131,54 @@ class Plan {
     String? description,
     ParticipationType? participationType,
     double? interestRate,
-    double? annualInterest, // Added parameter
+    double? annualInterest, // Added parameter for direct percentage input
     double? minimalAmount,
-    double? maximalAmount,
     PaymentDistribution? paymentDistribution,
-    bool? hasGuarantee,
     bool? isSelected,
     int? lengthMonths,
     double? exitInterest,
   }) {
-    // Handle the annualInterest parameter specifically
-    final double effectiveInterestRate = annualInterest ?? this.interestRate;
+    // If annualInterest is provided, convert it from percentage to decimal
+    final double effectiveInterestRate = annualInterest != null ? 
+                                        annualInterest / 100 : 
+                                        interestRate ?? this.interestRate;
+    
+    // For exit payment distribution, ensure exitInterest equals interestRate
+    final PaymentDistribution effectivePaymentDistribution = paymentDistribution ?? this.paymentDistribution;
+    double effectiveExitInterest = exitInterest ?? this.exitInterest;
+    
+    if (effectivePaymentDistribution == PaymentDistribution.exit) {
+      effectiveExitInterest = effectiveInterestRate;
+    }
+    
+    // Generate default name if empty or changing participation type or interest rate
+    String effectiveName = name ?? this.name;
+    if (effectiveName.isEmpty || participationType != null || annualInterest != null || interestRate != null) {
+      final ParticipationType effectiveParticipationType = participationType ?? this.participationType;
+      final double effectiveDisplayRate = annualInterest ?? (effectiveInterestRate * 100);
+      effectiveName = '${effectiveParticipationType.displayName} ${effectiveDisplayRate.toStringAsFixed(1)}%';
+    }
     
     return Plan(
       id: id ?? this.id,
       projectId: projectId ?? this.projectId,
-      name: name ?? this.name,
+      name: effectiveName,
       description: description ?? this.description,
       participationType: participationType ?? this.participationType,
       interestRate: effectiveInterestRate,
       minimalAmount: minimalAmount ?? this.minimalAmount,
-      maximalAmount: maximalAmount ?? this.maximalAmount,
-      paymentDistribution: paymentDistribution ?? this.paymentDistribution,
-      hasGuarantee: hasGuarantee ?? this.hasGuarantee,
+      paymentDistribution: effectivePaymentDistribution,
       isSelected: isSelected ?? this.isSelected,
       lengthMonths: lengthMonths ?? this.lengthMonths,
-      exitInterest: exitInterest ?? this.exitInterest,
+      exitInterest: effectiveExitInterest,
     );
   }
 
-  /// Get the annual interest rate
+  /// Get the annual interest rate as a percentage (e.g., 15.0 for 15%)
   double get annualInterest {
-    // For regular plans, the interestRate is already annual
-    // For plans with distributions that are not annual, we calculate the annual equivalent
-    switch (paymentDistribution) {
-      case PaymentDistribution.monthly:
-        // Convert monthly rate to annual rate: (1 + r)^12 - 1
-        return (math.pow(1 + interestRate, 12) - 1) as double;
-      case PaymentDistribution.quarterly:
-        // Convert quarterly rate to annual rate: (1 + r)^4 - 1
-        return (math.pow(1 + interestRate, 4) - 1) as double;
-      case PaymentDistribution.semiannual:
-        // Convert semi-annual rate to annual rate: (1 + r)^2 - 1
-        return (math.pow(1 + interestRate, 2) - 1) as double;
-      case PaymentDistribution.annual:
-      case PaymentDistribution.exit:
-        // Annual rate is already annual
-        return interestRate;
-    }
+    // interestRate is stored as decimal (e.g., 0.15 for 15%)
+    // Convert to percentage for display
+    return interestRate * 100;
   }
 
   /// Get the name of the participation type
@@ -192,14 +195,13 @@ class Plan {
       'name': name,
       'description': description,
       'participationType': participationType.index,
-      'interestRate': interestRate,
+      'interestRate': interestRate, // Store as decimal in DB
       'minimalAmount': minimalAmount,
-      'maximalAmount': maximalAmount,
       'paymentDistribution': paymentDistribution.index,
-      'hasGuarantee': hasGuarantee,
       'isSelected': isSelected,
       'lengthMonths': lengthMonths,
       'exitInterest': exitInterest,
+      'updatedAt': DateTime.now().millisecondsSinceEpoch,
     };
   }
 
@@ -213,9 +215,7 @@ class Plan {
       participationType: ParticipationType.values[map['participationType'] ?? 0],
       interestRate: (map['interestRate'] ?? 0.0).toDouble(),
       minimalAmount: (map['minimalAmount'] ?? 0.0).toDouble(),
-      maximalAmount: (map['maximalAmount'] ?? 0.0).toDouble(),
       paymentDistribution: PaymentDistribution.values[map['paymentDistribution'] ?? 0],
-      hasGuarantee: map['hasGuarantee'] ?? false,
       isSelected: map['isSelected'] ?? false,
       lengthMonths: map['lengthMonths'] ?? 12,
       exitInterest: (map['exitInterest'] ?? 0.0).toDouble(),

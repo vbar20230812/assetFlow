@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
 import '../models/plan.dart';
-import '../models/project.dart'; // Add Project model import
+import '../models/project.dart';
 import '../services/database_service.dart';
 import '../utils/theme_colors.dart';
 import '../utils/formatter_util.dart';
@@ -13,13 +13,13 @@ import '../widgets/asset_flow_loading_widget.dart';
 class PlanEditScreen extends StatefulWidget {
   final String projectId;
   final Plan plan;
-  final Project project; // Add project parameter
+  final Project project;
 
   const PlanEditScreen({
     super.key,
     required this.projectId,
     required this.plan,
-    required this.project, // Add required project parameter
+    required this.project,
   });
 
   @override
@@ -52,8 +52,14 @@ class _PlanEditScreenState extends State<PlanEditScreen> {
     
     // Initialize controllers with current plan values
     _minimalAmountController = TextEditingController(text: widget.plan.minimalAmount.toString());
-    _annualInterestController = TextEditingController(text: widget.plan.annualInterest.toString());
-    _exitInterestController = TextEditingController(text: widget.plan.exitInterest.toString());
+    
+    // For interest rates, we display as percentages in the UI
+    _annualInterestController = TextEditingController(
+      text: widget.plan.annualInterest.toStringAsFixed(2) // Gets percentage value from getter
+    );
+    _exitInterestController = TextEditingController(
+      text: (widget.plan.exitInterest * 100).toStringAsFixed(2)
+    );
     _lengthMonthsController = TextEditingController(text: widget.plan.lengthMonths.toString());
     
     // Initialize other form values
@@ -290,7 +296,7 @@ class _PlanEditScreenState extends State<PlanEditScreen> {
         return 'Monthly payments';
       case PaymentDistribution.quarterly:
         return 'Quarterly payments';
-      case PaymentDistribution.semiannual: // Changed from halfYearly to semiannual
+      case PaymentDistribution.semiannual:
         return 'Semi-annual payments';
       case PaymentDistribution.annual:
         return 'Annual payments';
@@ -405,18 +411,19 @@ class _PlanEditScreenState extends State<PlanEditScreen> {
     try {
       // Parse form values
       final minimalAmount = double.parse(_minimalAmountController.text);
-      final annualInterest = double.parse(_annualInterestController.text) / 100; // Convert to decimal
+      final annualInterest = double.parse(_annualInterestController.text); // This is in percentage
       final exitInterest = double.parse(_exitInterestController.text) / 100; // Convert to decimal
       final lengthMonths = int.parse(_lengthMonthsController.text);
       
       // Prepare data to update
+      // IMPORTANT: interestRate in DB must be stored as decimal (e.g., 0.15 for 15%)
       final data = {
         'minimalAmount': minimalAmount,
-        'interestRate': annualInterest, // Use interestRate instead of annualInterest
+        'interestRate': annualInterest / 100, // Convert from percentage to decimal for storage
         'exitInterest': exitInterest,
         'lengthMonths': lengthMonths,
-        'participationType': _participationType.index, // Use index instead of toString()
-        'paymentDistribution': _paymentDistribution.index, // Use index instead of toString()
+        'participationType': _participationType.index,
+        'paymentDistribution': _paymentDistribution.index,
         'isSelected': _isSelected,
         'updatedAt': DateTime.now().millisecondsSinceEpoch,
       };

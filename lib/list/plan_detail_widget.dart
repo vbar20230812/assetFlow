@@ -99,7 +99,7 @@ class PlanDetailsSection extends StatelessWidget {
       case PaymentDistribution.quarterly:
         paymentSchedule = 'Quarterly payments';
         break;
-      case PaymentDistribution.semiannual:  // Use semiannual instead of halfYearly
+      case PaymentDistribution.semiannual:
         paymentSchedule = 'Semi-annual payments';
         break;
       case PaymentDistribution.annual:
@@ -131,7 +131,7 @@ class PlanDetailsSection extends StatelessWidget {
         if (plan.paymentDistribution != PaymentDistribution.exit)
           PlanDetailItem(
             label: 'Exit Interest',
-            value: '${plan.exitInterest.toStringAsFixed(2)}%',
+            value: '${(plan.exitInterest * 100).toStringAsFixed(2)}%',
           ),
       ],
     );

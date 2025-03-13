@@ -3,15 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
 import '../models/plan.dart';
-import '../models/project.dart'; // Add project model import
+import '../models/project.dart';
 import '../utils/theme_colors.dart';
-import '../utils/formatter_util.dart'; // Add this import
+import '../utils/formatter_util.dart';
 
 /// Dialog for adding or editing an investment plan
 class PlanFormDialog extends StatefulWidget {
   final String title;
   final Plan plan;
-  final Project project; // Add project parameter
+  final Project project;
   final int projectLength;
   final Function(Plan) onSave;
 
@@ -19,7 +19,7 @@ class PlanFormDialog extends StatefulWidget {
     super.key,
     required this.title,
     required this.plan,
-    required this.project, // Add required project parameter
+    required this.project,
     required this.projectLength,
     required this.onSave,
   });
@@ -43,30 +43,48 @@ class _PlanFormDialogState extends State<PlanFormDialog> {
   // Form values
   late ParticipationType _participationType;
   late PaymentDistribution _paymentDistribution;
-  late bool _hasGuarantee;
 
   @override
   void initState() {
     super.initState();
     _logger.info('PlanFormDialog initialized');
     
-    // Initialize controllers with string values without decimal points
+    // Initialize controllers with string values
     _nameController = TextEditingController(text: widget.plan.name);
     _minimalAmountController = TextEditingController(
       text: widget.plan.minimalAmount.toInt().toString() // Remove decimal
     );
     _lengthMonthsController = TextEditingController(text: widget.plan.lengthMonths.toString());
+    
+    // Interest rates are stored as decimals in the database (e.g., 0.15 for 15%)
+    // For UI, we display them as percentages
     _annualInterestController = TextEditingController(
-      text: (widget.plan.annualInterest * 100).toStringAsFixed(2)
+      text: widget.plan.annualInterest.toStringAsFixed(2) // This now gets the percentage value
     );
     _exitInterestController = TextEditingController(
-      text: (widget.plan.exitInterest * 100).toStringAsFixed(2)
+      text: (widget.plan.exitInterest * 100).toStringAsFixed(2) // Convert to percentage
     );
     
     // Initialize other form values
     _participationType = widget.plan.participationType;
     _paymentDistribution = widget.plan.paymentDistribution;
-    _hasGuarantee = widget.plan.hasGuarantee;
+    
+    // Set name based on participation type and interest rate if empty
+    if (_nameController.text.isEmpty) {
+      _updateDefaultName();
+    }
+    
+    // Add listeners for participation type and interest rate to update default name
+    _annualInterestController.addListener(_updateDefaultName);
+  }
+
+  void _updateDefaultName() {
+    if (_nameController.text.isEmpty || (_nameController.text == widget.plan.name && 
+        (widget.plan.name.startsWith(_participationType.displayName) ||
+         widget.plan.name.contains('%')))) {
+      final interest = double.tryParse(_annualInterestController.text) ?? 0.0;
+      _nameController.text = '${_participationType.displayName} ${interest.toStringAsFixed(1)}%';
+    }
   }
 
   @override
@@ -105,11 +123,10 @@ class _PlanFormDialogState extends State<PlanFormDialog> {
                     decoration: const InputDecoration(
                       labelText: 'Plan Name',
                       border: OutlineInputBorder(),
+                      helperText: 'Leave empty for auto-generated name',
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a name for the plan';
-                      }
+                      // Name can be empty now as it will be auto-generated
                       return null;
                     },
                   ),
@@ -132,6 +149,7 @@ class _PlanFormDialogState extends State<PlanFormDialog> {
                       if (value != null) {
                         setState(() {
                           _participationType = value;
+                          _updateDefaultName();
                         });
                       }
                     },
@@ -154,7 +172,7 @@ class _PlanFormDialogState extends State<PlanFormDialog> {
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly, // Only allow digits (no decimal)
+                      FilteringTextInputFormatter.digitsOnly,
                     ],
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -269,19 +287,6 @@ class _PlanFormDialogState extends State<PlanFormDialog> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Guarantee field
-                  SwitchListTile(
-                    title: const Text('Has Guarantee'),
-                    subtitle: const Text('Does this plan have a guarantee?'),
-                    value: _hasGuarantee,
-                    activeColor: AssetFlowColors.primary,
-                    onChanged: (value) {
-                      setState(() {
-                        _hasGuarantee = value;
-                      });
-                    },
-                  ),
-                  
                   // Exit interest field (only for non-exit distributions)
                   if (_paymentDistribution != PaymentDistribution.exit)
                     Padding(
@@ -352,27 +357,33 @@ class _PlanFormDialogState extends State<PlanFormDialog> {
       // Parse values properly
       final double minimalAmount = double.parse(_minimalAmountController.text);
       final int lengthMonths = int.parse(_lengthMonthsController.text);
-      final double annualInterest = double.parse(_annualInterestController.text) / 100; // Convert from percentage to decimal
-      final double exitInterest = _exitInterestController.text.isNotEmpty ? 
-                                 double.parse(_exitInterestController.text) / 100 : 0.0;
+      final double annualInterest = double.parse(_annualInterestController.text); // Keep as percentage
+      
+      double exitInterest;
+      if (_paymentDistribution == PaymentDistribution.exit) {
+        // For exit payment distribution, exit interest should be the same as interestRate
+        exitInterest = annualInterest / 100;
+      } else {
+        exitInterest = _exitInterestController.text.isNotEmpty ? 
+                        double.parse(_exitInterestController.text) / 100 : 0.0; // Convert to decimal
+      }
       
       // Create updated plan with form values
       final updatedPlan = widget.plan.copyWith(
         name: _nameController.text.trim(),
         participationType: _participationType,
         minimalAmount: minimalAmount,
-        maximalAmount: minimalAmount, // Set maximal same as minimal
         lengthMonths: lengthMonths,
-        interestRate: annualInterest, // Set interest rate directly
+        annualInterest: annualInterest, // Pass percentage - will be converted to decimal in copyWith
         paymentDistribution: _paymentDistribution,
-        hasGuarantee: _hasGuarantee,
         exitInterest: exitInterest,
       );
       
       // Call the onSave callback with the updated plan
       widget.onSave(updatedPlan);
       
-      // Dialog is automatically closed by Navigator.pop in PlanFormDialog after save
+      // Close the dialog
+      Navigator.of(context).pop();
     }
   }
 }
