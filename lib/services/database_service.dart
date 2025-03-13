@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logging/logging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 // Import files from the same directory
 import 'firebase_data_connect.dart';
@@ -15,6 +16,11 @@ class DatabaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Logger _logger = Logger('DatabaseService');
   final DefaultConnector _connector = DefaultConnector.instance;
+
+  /// Format date as dd/MM/YYYYTHH:mm:ss
+  String _formatDate(DateTime date) {
+    return DateFormat('dd/MM/yyyy\'T\'HH:mm:ss').format(date);
+  }
 
   /// Get the current user ID or throw an exception if not logged in
   String _getCurrentUserId() {
@@ -59,17 +65,14 @@ class DatabaseService {
       
       bool shouldBeSelected = plansSnapshot.docs.isEmpty || plan.isSelected;
       
+      // Create plan with updated values to ensure projectId is set
+      final planWithProjectId = plan.copyWith(
+        projectId: projectId,
+        isSelected: shouldBeSelected,
+      );
+      
       // Prepare the plan data
-      final Map<String, dynamic> planData = plan.toMap();
-      
-      // Remove maximalAmount and hasGuarantee fields
-      planData.remove('maximalAmount');
-      planData.remove('hasGuarantee');
-      
-      // Update isSelected flag if needed
-      if (shouldBeSelected) {
-        planData['isSelected'] = true;
-      }
+      final Map<String, dynamic> planData = planWithProjectId.toMap();
       
       // Using the connector to add the plan
       final docRef = await _connector.dataConnect.addDocument(
@@ -92,6 +95,19 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Updating project $projectId for user: $userId');
 
+      // Process date values before sending to Firestore
+      if (data.containsKey('startDate') && data['startDate'] is DateTime) {
+        data['startDate'] = _formatDate(data['startDate'] as DateTime);
+      }
+      
+      if (data.containsKey('firstPaymentDate') && data['firstPaymentDate'] is DateTime) {
+        data['firstPaymentDate'] = _formatDate(data['firstPaymentDate'] as DateTime);
+      }
+      
+      if (data.containsKey('updatedAt') && data['updatedAt'] is DateTime) {
+        data['updatedAt'] = _formatDate(data['updatedAt'] as DateTime);
+      }
+
       await _connector.dataConnect.updateDocument(
         'users/$userId/projects',
         projectId,
@@ -111,9 +127,8 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Updating plan $planId in project $projectId for user: $userId');
 
-      // Remove maximalAmount and hasGuarantee fields if they exist
-      data.remove('maximalAmount');
-      data.remove('hasGuarantee');
+      // Ensure projectId is set in the data
+      data['projectId'] = projectId;
       
       // Ensure exit interest equals interest rate for exit payment distribution
       if (data.containsKey('paymentDistribution') && data['paymentDistribution'] == PaymentDistribution.exit.index) {
@@ -252,9 +267,33 @@ class DatabaseService {
       return _connector.dataConnect.getCollectionStream(
         'users/$userId/projects/$projectId/plans',
       ).map((snapshot) {
-        return snapshot.docs.map((doc) {
-          return Plan.fromFirestore(doc);
+        final plans = snapshot.docs.map((doc) {
+          final plan = Plan.fromFirestore(doc);
+          
+          // Ensure projectId is set in each plan
+          if (plan.projectId.isEmpty) {
+            // Create a new plan with the correct projectId
+            return plan.copyWith(projectId: projectId);
+          }
+          return plan;
         }).toList();
+        
+        // Ensure at least one plan is selected if plans exist
+        if (plans.isNotEmpty && !plans.any((plan) => plan.isSelected)) {
+          // Update the first plan to be selected in the database
+          final firstPlanId = plans.first.id;
+          updatePlan(projectId, firstPlanId, {'isSelected': true});
+          
+          // Return the updated list
+          return plans.map((plan) {
+            if (plan.id == firstPlanId) {
+              return plan.copyWith(isSelected: true);
+            }
+            return plan;
+          }).toList();
+        }
+        
+        return plans;
       });
     } catch (e) {
       _logger.severe('Error getting project plans: $e');
@@ -268,28 +307,29 @@ class DatabaseService {
       final userId = _getCurrentUserId();
       _logger.info('Deleting plan $planId from project $projectId for user: $userId');
 
+      // Check if the plan being deleted is selected
+      final planSnapshot = await _connector.dataConnect.getDocument(
+        'users/$userId/projects/$projectId/plans',
+        planId,
+      );
+      
+      final bool wasSelected = planSnapshot.exists && 
+                              (planSnapshot.data() as Map<String, dynamic>)['isSelected'] == true;
+
+      // Delete the plan
       await _connector.dataConnect.deleteDocument(
         'users/$userId/projects/$projectId/plans',
         planId,
       );
 
       // Check if there are any remaining plans and select one if needed
-      final plansSnapshot = await _connector.dataConnect.getCollectionStream(
-        'users/$userId/projects/$projectId/plans',
-      ).first;
-      
-      if (plansSnapshot.docs.isNotEmpty) {
-        bool hasSelectedPlan = false;
-        for (var doc in plansSnapshot.docs) {
-          final data = doc.data() as Map<String, dynamic>;
-          if (data['isSelected'] == true) {
-            hasSelectedPlan = true;
-            break;
-          }
-        }
+      if (wasSelected) {
+        final plansSnapshot = await _connector.dataConnect.getCollectionStream(
+          'users/$userId/projects/$projectId/plans',
+        ).first;
         
-        // If no plan is selected, select the first one
-        if (!hasSelectedPlan) {
+        if (plansSnapshot.docs.isNotEmpty) {
+          // Select the first plan if the deleted plan was selected
           final firstPlanId = plansSnapshot.docs.first.id;
           await _connector.dataConnect.updateDocument(
             'users/$userId/projects/$projectId/plans',
@@ -315,7 +355,10 @@ class DatabaseService {
       await _connector.dataConnect.updateDocument(
         'users/$userId/projects',
         projectId,
-        {'isArchived': true, 'updatedAt': FieldValue.serverTimestamp()},
+        {
+          'isArchived': true, 
+          'updatedAt': _formatDate(DateTime.now()),
+        },
       );
 
       _logger.info('Project archived successfully');
@@ -334,7 +377,10 @@ class DatabaseService {
       await _connector.dataConnect.updateDocument(
         'users/$userId/projects',
         projectId,
-        {'isArchived': false, 'updatedAt': FieldValue.serverTimestamp()},
+        {
+          'isArchived': false, 
+          'updatedAt': _formatDate(DateTime.now()),
+        },
       );
 
       _logger.info('Project unarchived successfully');

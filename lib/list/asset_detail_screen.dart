@@ -5,11 +5,12 @@ import '../models/project.dart';
 import '../models/plan.dart';
 import '../services/database_service.dart';
 import '../utils/theme_colors.dart';
-import '../utils/date_util.dart';
 import '../utils/formatter_util.dart';
+import '../utils/date_util.dart';
 import '../widgets/asset_flow_loading_widget.dart';
 import 'plan_detail_widget.dart';
 import 'plan_form_dialog.dart';
+import 'edit_project_screen.dart'; // Add this import
 
 /// Screen that displays detailed information about a single asset/investment
 class AssetDetailScreen extends StatefulWidget {
@@ -138,92 +139,119 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   }
 
   /// Build the project overview section
-  Widget _buildProjectOverview() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: AssetFlowColors.background,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Project name and archived badge if needed
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _project.name,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: _project.isArchived
-                        ? AssetFlowColors.textSecondary
-                        : AssetFlowColors.primary,
-                  ),
+  /// Build the project overview section
+/// Build the project overview section
+Widget _buildProjectOverview() {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    color: AssetFlowColors.background,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Project name and archived badge if needed
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                _project.name,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: _project.isArchived
+                      ? AssetFlowColors.textSecondary
+                      : AssetFlowColors.primary,
                 ),
               ),
-              if (_project.isArchived)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Archived',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AssetFlowColors.textSecondary,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(
-                Icons.business,
-                size: 16,
-                color: AssetFlowColors.textSecondary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                _project.company,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: AssetFlowColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // Project details
-          _buildDetailItem(
-            icon: Icons.calendar_today,
-            label: 'Project Length',
-            value: '${_project.projectLengthMonths} months',
-          ),
-          // Only show currency if it exists in your Project model
-          if (_project.currency.isNotEmpty)
-            _buildDetailItem(
-              icon: Icons.attach_money,
-              label: 'Currency',
-              value: _project.currency,
             ),
+            if (_project.isArchived)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'Archived',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AssetFlowColors.textSecondary,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Project details
+        // Company name
+        _buildDetailItem(
+          icon: Icons.business,
+          label: 'Company',
+          value: _project.company,
+        ),
+        
+        // Project duration
+        _buildDetailItem(
+          icon: Icons.calendar_today,
+          label: 'Project Duration',
+          value: '${_project.projectLengthMonths} months',
+        ),
+        
+        // Investment amount (instead of currency)
+        if (_project.investmentAmount > 0)
+          _buildDetailItem(
+            icon: Icons.attach_money,
+            label: 'Investment Amount',
+            value: FormatterUtil.formatCurrency(_project.investmentAmount, currencyCode: _project.currency),
+          ),
+        
+        // Project dates section
+        if (_project.startDate.isAfter(DateTime(2020)))
           _buildDetailItem(
             icon: Icons.date_range,
-            label: 'Created On',
-            value: DateUtil.formatLongDate(_project.createdAt),
+            label: 'Start Date',
+            value: DateUtil.formatLongDate(_project.startDate),
           ),
+        
+        if (_project.firstPaymentDate.isAfter(DateTime(2020)))
           _buildDetailItem(
-            icon: Icons.update,
-            label: 'Last Updated',
-            value: DateUtil.formatLongDate(_project.updatedAt),
+            icon: Icons.payments,
+            label: 'First Payment Date',
+            value: DateUtil.formatLongDate(_project.firstPaymentDate),
           ),
-        ],
-      ),
-    );
-  }
+        
+        // Fee section
+        if (_project.nonRefundableFee > 0)
+          _buildDetailItem(
+            icon: Icons.money_off,
+            label: 'Non-Refundable Fee',
+            value: FormatterUtil.formatCurrency(_project.nonRefundableFee, currencyCode: _project.currency),
+          ),
+        
+        if (_project.nonRefundableFeeNote.isNotEmpty)
+          _buildDetailItem(
+            icon: Icons.note,
+            label: 'Non-Refundable Fee Note',
+            value: _project.nonRefundableFeeNote,
+          ),
+        
+        if (_project.refundableFee > 0)
+          _buildDetailItem(
+            icon: Icons.attach_money,
+            label: 'Refundable Fee',
+            value: FormatterUtil.formatCurrency(_project.refundableFee, currencyCode: _project.currency),
+          ),
+        
+        if (_project.refundableFeeNote.isNotEmpty)
+          _buildDetailItem(
+            icon: Icons.note,
+            label: 'Refundable Fee Note',
+            value: _project.refundableFeeNote,
+          ),
+      ],
+    ),
+  );
+}
 
   /// Build a detail item with icon, label, and value
   Widget _buildDetailItem({
@@ -500,13 +528,23 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   }
 
   /// Edit the project
-  void _editProject() {
-    _logger.info('Edit project button pressed: ${widget.projectId}');
-    // TODO: Navigate to edit project screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit project feature coming soon')),
-    );
-  }
+/// Edit the project
+void _editProject() {
+  _logger.info('Edit project button pressed: ${widget.projectId}');
+  
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => EditProjectScreen(
+        project: _project,
+      ),
+    ),
+  ).then((result) {
+    // Reload project data if changes were made
+    if (result == true) {
+      _loadProjectData();
+    }
+  });
+}
 
   /// Confirm project deletion
   void _confirmDeleteProject() {
