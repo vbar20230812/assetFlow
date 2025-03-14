@@ -72,6 +72,44 @@ users/
         plans/
           {planId}/
 ```
+find . -type f -name "*.dart" | sort
+./.dart_tool/dartpad/web_plugin_registrant.dart
+./dataconnect-generated/dart/default_connector/default.dart
+./lib/auth/auth_screen.dart
+./lib/auth/auth_service.dart
+./lib/auth/auth_wrapper.dart
+./lib/auth/forgot_password_screen.dart
+./lib/auth_service.dart
+./lib/auth/signup_screen.dart
+./lib/firebase_options.dart
+./lib/firebase_options.template.dart
+./lib/list/asset_detail_screen.dart
+./lib/list/assets_list_screen.dart
+./lib/list/edit_project_screen.dart
+./lib/list/empty_assets_screen.dart
+./lib/list/plan_detail_widget.dart
+./lib/list/plan_edit_screen.dart
+./lib/list/plan_form_dialog.dart
+./lib/main.dart
+./lib/models/asset.dart
+./lib/models/plan.dart
+./lib/models/project.dart
+./lib/new/add_investment_screen.dart
+./lib/new/steps/amount_step.dart
+./lib/new/steps/fees_step.dart
+./lib/new/steps/plan_step.dart
+./lib/new/steps/project_step.dart
+./lib/services/database_service.dart
+./lib/services/default.dart
+./lib/services/firebase_data_connect.dart
+./lib/start/splash_screen.dart
+./lib/utils/date_util.dart
+./lib/utils/formatter_util.dart
+./lib/utils/logger_util.dart
+./lib/utils/theme_colors.dart
+./lib/widgets/asset_flow_loader.dart
+./lib/widgets/asset_flow_loading_widget.dart
+./test/widget_test.dart
 
 ## Development Guidelines
 

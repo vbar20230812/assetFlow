@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AssetFlow Data Import - Projects and Plans Only</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4285F4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    button:hover {
+      background-color: #3367D6;
+    }
+    #status {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      min-height: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <!-- Firebase Auth -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <!-- Firebase Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <script>
+    // Your Firebase configuration from firebase_options.dart
+    const firebaseConfig = {
+      apiKey: "AIzaSyAfkTh1bZvZr1nFgTx7Y_bNkTY_NNRPwjw",
+      appId: "1:317289370549:web:3cf0ef6336cc20c762fffc",
+      messagingSenderId: "317289370549",
+      projectId: "assetflow-fire1",
+      authDomain: "assetflow-fire1.firebaseapp.com",
+      storageBucket: "assetflow-fire1.firebasestorage.app",
+      measurementId: "G-4BDB018L60",
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    
+    // References
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    
+    // Specific user ID provided
+    const USER_ID = "CosAi4ACHOd7zpEb3ycmaL1kXYY2";
+    
+    function log(message, isError = false) {
+      const statusDiv = document.getElementById('status');
+      const p = document.createElement('p');
+      p.textContent = message;
+      p.className = isError ? 'error' : 'success';
+      statusDiv.appendChild(p);
+      statusDiv.scrollTop = statusDiv.scrollHeight;
+    }
+    
+    async function createUser() {
+      try {
+        log("Using existing user with ID: " + USER_ID);
+        log("This tool will add projects and plans to user ID: " + USER_ID);
+        // We're not creating a new user, but using the existing one
+        // Try signing in just to make sure we're authenticated
+        await auth.signInWithEmailAndPassword("a.b@d.com", "abcd1234");
+        log("Signed in successfully");
+      } catch (signInError) {
+        log("Error signing in: " + signInError.message, true);
+        log("Continuing anyway, as we're using direct Firestore access with the user ID", true);
+      }
+    }
+    
+    // Import data according to the proper structure
+    async function importData() {
+      try {
+        // Ensure we're authenticated or at least acknowledge the user ID
+        await createUser();
+        
+        // Start importing data
+        log("Starting to import projects and plans...");
+        
+        // Create projects and plans under user
+        // Define all project data
+        const projectsData = [
+          {
+            id: "project_1",
+            name: "Real Estate Development",
+            company: "Skyline Properties",
+            projectLengthMonths: 36,
+            currency: "USD",
+            investmentAmount: 250000.00,
+            startDate: new Date(2023, 2, 15), // March 15, 2023
+            firstPaymentDate: new Date(2023, 4, 1), // May 1, 2023
+            nonRefundableFee: 2500.00,
+            nonRefundableFeeNote: "Processing and verification fee",
+            refundableFee: 5000.00,
+            refundableFeeNote: "Security deposit, returned at project completion",
+            isArchived: false,
+            createdAt: new Date(2023, 2, 10), // March 10, 2023
+            updatedAt: new Date(2023, 2, 10), 
+            plans: [
+              {
+                id: "plan_1_1",
+                name: "Conservative",
+                description: "Low-risk investment option with steady returns",
+                interestRate: 0.085,  // 8.5%
+                paymentsPerYear: 4,   // Quarterly
+                paymentDistribution: 1, // Quarterly
+                participationType: 0,  // Limited Partner
+                minimalAmount: 50000,
+                exitInterest: 0,
+                lengthMonths: 36,
+                isSelected: true,     // This plan is selected
+                createdAt: new Date(2023, 2, 10)
+              },
+              {
+                id: "plan_1_2",
+                name: "Balanced",
+                description: "Medium-risk investment with better returns",
+                interestRate: 0.12,   // 12%
+                paymentsPerYear: 4,   // Quarterly
+                paymentDistribution: 1, // Quarterly
+                participationType: 0,  // Limited Partner 
+                minimalAmount: 100000,
+                exitInterest: 0,
+                lengthMonths: 36,
+                isSelected: false,
+                createdAt: new Date(2023, 2, 10)
+              },
+              {
+                id: "plan_1_3",
+                name: "Aggressive",
+                description: "Higher-risk investment with potential for greater returns",
+                interestRate: 0.155,  // 15.5%
+                paymentsPerYear: 2,   // Semi-annual
+                paymentDistribution: 2, // Semi-annual
+                participationType: 0,  // Limited Partner
+                minimalAmount: 150000,
+                exitInterest: 0.05,   // 5% exit bonus
+                lengthMonths: 36,
+                isSelected: false,
+                createdAt: new Date(2023, 2, 10)
+              }
+            ]
+          },
+          {
+            id: "project_2",
+            name: "Tech Startup Funding",
+            company: "InnovateTech Ventures",
+            projectLengthMonths: 24,
+            currency: "EUR",
+            investmentAmount: 175000.00,
+            startDate: new Date(2023, 3, 1), // April 1, 2023
+            firstPaymentDate: new Date(2023, 6, 1), // July 1, 2023
+            nonRefundableFee: 1750.00,
+            nonRefundableFeeNote: "Due diligence fee",
+            refundableFee: 0.00,
+            refundableFeeNote: "",
+            isArchived: false,
+            createdAt: new Date(2023, 2, 25), // March 25, 2023
+            updatedAt: new Date(2023, 2, 25),
+            plans: [
+              {
+                id: "plan_2_1",
+                name: "Seed Round",
+                description: "Early stage investment with high growth potential",
+                interestRate: 0.10,   // 10%
+                paymentsPerYear: 2,   // Semi-annual
+                paymentDistribution: 2, // Semi-annual
+                participationType: 0,  // Limited Partner
+                minimalAmount: 25000,
+                exitInterest: 0.10,   // 10% exit bonus
+                lengthMonths: 24,
+                isSelected: false,
+                createdAt: new Date(2023, 2, 25)
+              },
+              {
+                id: "plan_2_2",
+                name: "Series A",
+                description: "Growth stage investment with established traction",
+                interestRate: 0.18,   // 18%
+                paymentsPerYear: 2,   // Semi-annual
+                paymentDistribution: 2, // Semi-annual
+                participationType: 0,  // Limited Partner
+                minimalAmount: 50000,
+                exitInterest: 0.15,   // 15% exit bonus
+                lengthMonths: 24,
+                isSelected: true,     // This plan is selected
+                createdAt: new Date(2023, 2, 25)
+              },
+              {
+                id: "plan_2_3",
+                name: "Series B",
+                description: "Late stage investment with scaling focus",
+                interestRate: 0.25,   // 25%
+                paymentsPerYear: 1,   // Annual
+                paymentDistribution: 3, // Annual
+                participationType: 0,  // Limited Partner
+                minimalAmount: 100000,
+                exitInterest: 0.20,   // 20% exit bonus
+                lengthMonths: 24,
+                isSelected: false,
+                createdAt: new Date(2023, 2, 25)
+              }
+            ]
+          },
+          {
+            id: "project_3",
+            name: "Solar Energy Farm",
+            company: "GreenPower Solutions",
+            projectLengthMonths: 60,
+            currency: "GBP",
+            investmentAmount: 320000.00,
+            startDate: new Date(2023, 4, 15), // May 15, 2023
+            firstPaymentDate: new Date(2023, 7, 1), // August 1, 2023
+            nonRefundableFee: 3000.00,
+            nonRefundableFeeNote: "Engineering assessment fee",
+            refundableFee: 8000.00,
+            refundableFeeNote: "Land option deposit",
+            isArchived: false,
+            createdAt: new Date(2023, 4, 1), // May 1, 2023
+            updatedAt: new Date(2023, 4, 1),
+            plans: [
+              {
+                id: "plan_3_1",
+                name: "Eco Investor",
+                description: "Monthly returns for eco-conscious investors",
+                interestRate: 0.075,  // 7.5%
+                paymentsPerYear: 12,  // Monthly
+                paymentDistribution: 0, // Monthly
+                participationType: 0,  // Limited Partner
+                minimalAmount: 50000,
+                exitInterest: 0,
+                lengthMonths: 60,
+                isSelected: false,
+                createdAt: new Date(2023, 4, 1)
+              },
+              {
+                id: "plan_3_2",
+                name: "Green Growth",
+                description: "Balanced returns on renewable energy investment",
+                interestRate: 0.09,   // 9%
+                paymentsPerYear: 4,   // Quarterly
+                paymentDistribution: 1, // Quarterly
+                participationType: 0,  // Limited Partner
+                minimalAmount: 100000,
+                exitInterest: 0,
+                lengthMonths: 60,
+                isSelected: false,
+                createdAt: new Date(2023, 4, 1)
+              },
+              {
+                id: "plan_3_3",
+                name: "Sustainable Plus",
+                description: "Higher returns with semi-annual distribution",
+                interestRate: 0.115,  // 11.5%
+                paymentsPerYear: 2,   // Semi-annual
+                paymentDistribution: 2, // Semi-annual
+                participationType: 0,  // Limited Partner
+                minimalAmount: 150000,
+                exitInterest: 0.05,
+                lengthMonths: 60,
+                isSelected: true,     // This plan is selected
+                createdAt: new Date(2023, 4, 1)
+              }
+            ]
+          },
+          {
+            id: "project_4",
+            name: "Commercial Office Building",
+            company: "Metro Development Corp",
+            projectLengthMonths: 48,
+            currency: "USD",
+            investmentAmount: 500000.00,
+            startDate: new Date(2023, 5, 1), // June 1, 2023
+            firstPaymentDate: new Date(2023, 8, 1), // September 1, 2023
+            nonRefundableFee: 5000.00,
+            nonRefundableFeeNote: "Administrative and legal fees",
+            refundableFee: 10000.00,
+            refundableFeeNote: "Construction bond",
+            isArchived: false,
+            createdAt: new Date(2023, 4, 20), // May 20, 2023
+            updatedAt: new Date(2023, 4, 20),
+            plans: [
+              {
+                id: "plan_4_1",
+                name: "Fixed Income",
+                description: "Steady monthly returns from commercial real estate",
+                interestRate: 0.08,   // 8%
+                paymentsPerYear: 12,  // Monthly
+                paymentDistribution: 0, // Monthly
+                participationType: 1,  // Lender
+                minimalAmount: 100000,
+                exitInterest: 0,
+                lengthMonths: 48,
+                isSelected: true,     // This plan is selected
+                createdAt: new Date(2023, 4, 20)
+              },
+              {
+                id: "plan_4_2",
+                name: "Equity Share",
+                description: "Partial ownership with quarterly distributions",
+                interestRate: 0.14,   // 14%
+                paymentsPerYear: 4,   // Quarterly
+                paymentDistribution: 1, // Quarterly
+                participationType: 0,  // Limited Partner
+                minimalAmount: 200000,
+                exitInterest: 0.10,   // 10% exit bonus
+                lengthMonths: 48,
+                isSelected: false,
+                createdAt: new Date(2023, 4, 20)
+              },
+              {
+                id: "plan_4_3",
+                name: "Mixed Portfolio",
+                description: "Balanced investment combining debt and equity",
+                interestRate: 0.11,   // 11%
+                paymentsPerYear: 4,   // Quarterly
+                paymentDistribution: 1, // Quarterly
+                participationType: 0,  // Limited Partner
+                minimalAmount: 150000,
+                exitInterest: 0.05,   // 5% exit bonus
+                lengthMonths: 48,
+                isSelected: false,
+                createdAt: new Date(2023, 4, 20)
+              }
+            ]
+          },
+          {
+            id: "project_5",
+            name: "Logistics Expansion",
+            company: "FastTrack Delivery",
+            projectLengthMonths: 18,
+            currency: "CAD",
+            investmentAmount: 125000.00,
+            startDate: new Date(2023, 6, 1), // July 1, 2023
+            firstPaymentDate: new Date(2023, 7, 15), // August 15, 2023
+            nonRefundableFee: 1500.00,
+            nonRefundableFeeNote: "Market analysis fee",
+            refundableFee: 3000.00,
+            refundableFeeNote: "Equipment deposit",
+            isArchived: false,
+            createdAt: new Date(2023, 5, 20), // June 20, 2023
+            updatedAt: new Date(2023, 5, 20),
+            plans: [
+              {
+                id: "plan_5_1",
+                name: "Quick Return",
+                description: "Rapid monthly returns for short-term investors",
+                interestRate: 0.095,  // 9.5%
+                paymentsPerYear: 12,  // Monthly
+                paymentDistribution: 0, // Monthly
+                participationType: 1,  // Lender
+                minimalAmount: 25000,
+                exitInterest: 0,
+                lengthMonths: 18,
+                isSelected: false,
+                createdAt: new Date(2023, 5, 20)
+              },
+              {
+                id: "plan_5_2",
+                name: "Growth Focus",
+                description: "Balanced quarterly distributions with growth potential",
+                interestRate: 0.135,  // 13.5%
+                paymentsPerYear: 4,   // Quarterly
+                paymentDistribution: 1, // Quarterly
+                participationType: 0,  // Limited Partner
+                minimalAmount: 50000,
+                exitInterest: 0.05,   // 5% exit bonus
+                lengthMonths: 18,
+                isSelected: true,     // This plan is selected
+                createdAt: new Date(2023, 5, 20)
+              },
+              {
+                id: "plan_5_3",
+                name: "Premium Investor",
+                description: "High returns for premium investors with semi-annual distributions",
+                interestRate: 0.17,   // 17%
+                paymentsPerYear: 2,   // Semi-annual
+                paymentDistribution: 2, // Semi-annual
+                participationType: 0,  // Limited Partner
+                minimalAmount: 75000,
+                exitInterest: 0.10,   // 10% exit bonus
+                lengthMonths: 18,
+                isSelected: false,
+                createdAt: new Date(2023, 5, 20)
+              }
+            ]
+          }
+        ];
+
+        // Loop through projects and plans to create the data
+        for (let i = 0; i < projectsData.length; i++) {
+          const project = projectsData[i];
+          log(`Importing Project ${i+1}: ${project.name}`);
+          
+          // Create project document
+          const projectRef = db.collection('users').doc(USER_ID).collection('projects').doc(project.id);
+          await projectRef.set({
+            name: project.name,
+            company: project.company,
+            projectLengthMonths: project.projectLengthMonths,
+            currency: project.currency,
+            investmentAmount: project.investmentAmount,
+            startDate: project.startDate,
+            firstPaymentDate: project.firstPaymentDate,
+            nonRefundableFee: project.nonRefundableFee,
+            nonRefundableFeeNote: project.nonRefundableFeeNote,
+            refundableFee: project.refundableFee,
+            refundableFeeNote: project.refundableFeeNote,
+            isArchived: project.isArchived,
+            createdAt: project.createdAt,
+            updatedAt: project.updatedAt
+          });
+          
+          // Add plans for this project
+          for (let j = 0; j < project.plans.length; j++) {
+            const plan = project.plans[j];
+            const selectedStatus = plan.isSelected ? "SELECTED" : "not selected";
+            log(`  - Importing Plan ${j+1}: ${plan.name} (${selectedStatus})`);
+            
+            const planRef = projectRef.collection('plans').doc(plan.id);
+            await planRef.set({
+              name: plan.name,
+              description: plan.description,
+              interestRate: plan.interestRate,
+              participationType: plan.participationType,
+              minimalAmount: plan.minimalAmount,
+              paymentDistribution: plan.paymentDistribution,
+              lengthMonths: plan.lengthMonths,
+              exitInterest: plan.exitInterest,
+              isSelected: plan.isSelected,
+              createdAt: plan.createdAt
+            });
+          }
+        }
+        
+        log("All data imported successfully!");
+        log("User ID: " + USER_ID);
+        
+        // Sign out when done
+        await auth.signOut();
+        
+      } catch (error) {
+        log("Error importing data: " + error.message, true);
+        console.error("Full error:", error);
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>AssetFlow Data Import</h1>
+  <p>This tool will import projects and plans with one selected plan per project:</p>
+  <pre>
+Structure:
+users/
+  {userId}/
+    projects/
+      {projectId}/
+        plans/
+          {planId}/
+  </pre>
+  <p><strong>Using User ID:</strong> CosAi4ACHOd7zpEb3ycmaL1kXYY2</p>
+  <button onclick="importData()">Import Synthetic Data</button>
+  <div id="status"></div>
+</body>
+</html>
