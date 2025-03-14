@@ -321,7 +321,12 @@ class _BenefitItem extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AssetFlowColors.primary.withOpacity(0.1),
+              color: Color.fromRGBO(
+                AssetFlowColors.primary.r.toInt(),
+                AssetFlowColors.primary.g.toInt(),
+                AssetFlowColors.primary.b.toInt(),
+                0.1,
+              ),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Icon(

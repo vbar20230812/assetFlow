@@ -27,137 +27,166 @@ class EditProjectScreen extends StatefulWidget {
 }
 
 class _EditProjectScreenState extends State<EditProjectScreen> {
-  static final Logger _logger = Logger('EditProjectScreen');
-  final DatabaseService _databaseService = DatabaseService();
-  final _formKey = GlobalKey<FormState>();
+  static final Logger logger = Logger('EditProjectScreen');
+  final DatabaseService databaseService = DatabaseService();
+  final formKey = GlobalKey<FormState>();
   
   // Basic project fields
-  late TextEditingController _nameController;
-  late TextEditingController _companyController;
-  late TextEditingController _projectLengthController;
-  late TextEditingController _currencyController;
+  late TextEditingController nameController;
+  late TextEditingController companyController;
+  late TextEditingController projectLengthController;
+  late TextEditingController currencyController;
   
   // Amount stage fields
-  late TextEditingController _amountController;
-  late DateTime _startDate;
-  late DateTime _firstPaymentDate;
+  late TextEditingController amountController;
+  late DateTime startDate;
+  late DateTime firstPaymentDate;
   
   // Fee fields
-  late TextEditingController _nonRefundableFeeController;
-  late TextEditingController _nonRefundableFeeNoteController;
-  late TextEditingController _refundableFeeController;
-  late TextEditingController _refundableFeeNoteController;
+  late TextEditingController nonRefundableFeeController;
+  late TextEditingController nonRefundableFeeNoteController;
+  late TextEditingController refundableFeeController;
+  late TextEditingController refundableFeeNoteController;
   
-  bool _isLoading = false;
-  bool _hasChanges = false;
+  bool isLoading = false;
+  bool hasChanges = false;
 
   @override
   void initState() {
     super.initState();
-    _logger.info('Edit Project Screen initialized for: ${widget.project.id}');
+    logger.info('Edit Project Screen initialized for: ${widget.project.id}');
     
     // Initialize controllers for basic project fields
-    _nameController = TextEditingController(text: widget.project.name);
-    _companyController = TextEditingController(text: widget.project.company);
-    _projectLengthController = TextEditingController(text: widget.project.projectLengthMonths.toString());
-    _currencyController = TextEditingController(text: widget.project.currency);
+    nameController = TextEditingController(text: widget.project.name);
+    companyController = TextEditingController(text: widget.project.company);
+    projectLengthController = TextEditingController(text: widget.project.projectLengthMonths.toString());
+    currencyController = TextEditingController(text: widget.project.currency);
     
     // Initialize controllers for amount stage fields
-    _amountController = TextEditingController(
+    amountController = TextEditingController(
       text: widget.project.investmentAmount > 0 
           ? widget.project.investmentAmount.toStringAsFixed(2) 
           : ""
     );
-    _startDate = widget.project.startDate;
-    _firstPaymentDate = widget.project.firstPaymentDate;
+    startDate = widget.project.startDate;
+    firstPaymentDate = widget.project.firstPaymentDate;
     
     // Initialize controllers for fee fields
-    _nonRefundableFeeController = TextEditingController(
+    nonRefundableFeeController = TextEditingController(
       text: widget.project.nonRefundableFee > 0 
           ? widget.project.nonRefundableFee.toStringAsFixed(2) 
           : ""
     );
-    _nonRefundableFeeNoteController = TextEditingController(text: widget.project.nonRefundableFeeNote);
-    _refundableFeeController = TextEditingController(
+    nonRefundableFeeNoteController = TextEditingController(text: widget.project.nonRefundableFeeNote);
+    refundableFeeController = TextEditingController(
       text: widget.project.refundableFee > 0 
           ? widget.project.refundableFee.toStringAsFixed(2) 
           : ""
     );
-    _refundableFeeNoteController = TextEditingController(text: widget.project.refundableFeeNote);
+    refundableFeeNoteController = TextEditingController(text: widget.project.refundableFeeNote);
     
     // Add listeners to detect changes
-    _nameController.addListener(_onFieldChanged);
-    _companyController.addListener(_onFieldChanged);
-    _projectLengthController.addListener(_onFieldChanged);
-    _currencyController.addListener(_onFieldChanged);
-    _amountController.addListener(_onFieldChanged);
-    _nonRefundableFeeController.addListener(_onFieldChanged);
-    _nonRefundableFeeNoteController.addListener(_onFieldChanged);
-    _refundableFeeController.addListener(_onFieldChanged);
-    _refundableFeeNoteController.addListener(_onFieldChanged);
+    nameController.addListener(onFieldChanged);
+    companyController.addListener(onFieldChanged);
+    projectLengthController.addListener(onFieldChanged);
+    currencyController.addListener(onFieldChanged);
+    amountController.addListener(onFieldChanged);
+    nonRefundableFeeController.addListener(onFieldChanged);
+    nonRefundableFeeNoteController.addListener(onFieldChanged);
+    refundableFeeController.addListener(onFieldChanged);
+    refundableFeeNoteController.addListener(onFieldChanged);
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _companyController.dispose();
-    _projectLengthController.dispose();
-    _currencyController.dispose();
-    _amountController.dispose();
-    _nonRefundableFeeController.dispose();
-    _nonRefundableFeeNoteController.dispose();
-    _refundableFeeController.dispose();
-    _refundableFeeNoteController.dispose();
+    nameController.dispose();
+    companyController.dispose();
+    projectLengthController.dispose();
+    currencyController.dispose();
+    amountController.dispose();
+    nonRefundableFeeController.dispose();
+    nonRefundableFeeNoteController.dispose();
+    refundableFeeController.dispose();
+    refundableFeeNoteController.dispose();
     super.dispose();
   }
 
   /// Called when any field changes to track if form has unsaved changes
-  void _onFieldChanged() {
+  void onFieldChanged() {
     setState(() {
-      _hasChanges = true;
+      hasChanges = true;
     });
   }
 
-  /// Mark form as changed when dates are updated
-  //void _onDateChanged() {
-  //  setState(() {
-  //    _hasChanges = true;
-  //  });
-  //}
+  /// Show confirmation dialog for navigation when changes exist
+  void confirmNavigation() {
+    showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have unsaved changes. Are you sure you want to discard them?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              Navigator.of(context).pop(); // Go back to previous screen
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AssetFlowColors.error,
+            ),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Project'),
-        actions: [
-          // Save button
-          TextButton.icon(
-            onPressed: _hasChanges && !_isLoading ? _saveProject : null,
-            icon: const Icon(Icons.save),
-            label: const Text('Save'),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-            ),
+        appBar: AppBar(
+          title: const Text('Edit Project'),
+          leading: BackButton(
+            onPressed: () {
+              if (hasChanges) {
+                confirmNavigation();
+              } else {
+                Navigator.of(context).pop();
+              }
+            },
           ),
-        ],
-      ),
-      body: WillPopScope(
-        onWillPop: _onWillPop,
-        child: AssetFlowLoadingWidget(
-          isLoading: _isLoading,
+          actions: [
+            // Save button
+            TextButton.icon(
+              onPressed: hasChanges && !isLoading ? saveProject : null,
+              icon: const Icon(Icons.save),
+              label: const Text('Save'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        body: AssetFlowLoadingWidget(
+          isLoading: isLoading,
           loadingText: 'Saving project...',
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Form(
-              key: _formKey,
+              key: formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Project details section
-                  _buildSectionHeader('Project Details'),
-                  _buildTextField(
-                    controller: _nameController,
+                  buildSectionHeader('Project Details'),
+                  buildTextField(
+                    controller: nameController,
                     label: 'Project Name',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -169,8 +198,8 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                   const SizedBox(height: 16),
                   
                   // Company name
-                  _buildTextField(
-                    controller: _companyController,
+                  buildTextField(
+                    controller: companyController,
                     label: 'Company Name',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -182,8 +211,8 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                   const SizedBox(height: 16),
                   
                   // Project length
-                  _buildTextField(
-                    controller: _projectLengthController,
+                  buildTextField(
+                    controller: projectLengthController,
                     label: 'Project Length (months)',
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -205,8 +234,8 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                   const SizedBox(height: 16),
                   
                   // Currency
-                  _buildTextField(
-                    controller: _currencyController,
+                  buildTextField(
+                    controller: currencyController,
                     label: 'Currency',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -218,11 +247,11 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                   const SizedBox(height: 32),
                   
                   // Investment details section
-                  _buildSectionHeader('Investment Details'),
+                  buildSectionHeader('Investment Details'),
                   
                   // Investment amount
-                  _buildTextField(
-                    controller: _amountController,
+                  buildTextField(
+                    controller: amountController,
                     label: 'Investment Amount',
                     prefix: FormatterUtil.getCurrencySymbol(widget.project.currency),
                     keyboardType: TextInputType.number,
@@ -245,27 +274,27 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                   const SizedBox(height: 16),
                   
                   // Start date
-                  _buildDateField(
+                  buildDateField(
                     label: 'Project Start Date',
-                    date: _startDate,
-                    onTap: () => _selectDate(context, true),
+                    date: startDate,
+                    onTap: () => selectDate(context, true),
                   ),
                   const SizedBox(height: 16),
                   
                   // First payment date
-                  _buildDateField(
+                  buildDateField(
                     label: 'First Payment Date',
-                    date: _firstPaymentDate,
-                    onTap: () => _selectDate(context, false),
+                    date: firstPaymentDate,
+                    onTap: () => selectDate(context, false),
                   ),
                   const SizedBox(height: 32),
                   
                   // Additional fee section
-                  _buildSectionHeader('Additional Fees (Optional)'),
+                  buildSectionHeader('Additional Fees (Optional)'),
                   
                   // Non-refundable fee
-                  _buildTextField(
-                    controller: _nonRefundableFeeController,
+                  buildTextField(
+                    controller: nonRefundableFeeController,
                     label: 'Non-Refundable Fee',
                     prefix: FormatterUtil.getCurrencySymbol(widget.project.currency),
                     keyboardType: TextInputType.number,
@@ -287,16 +316,16 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                   const SizedBox(height: 8),
                   
                   // Non-refundable fee note
-                  _buildTextField(
-                    controller: _nonRefundableFeeNoteController,
+                  buildTextField(
+                    controller: nonRefundableFeeNoteController,
                     label: 'Notes on Non-Refundable Fee',
                     maxLines: 2,
                   ),
                   const SizedBox(height: 16),
                   
                   // Refundable fee
-                  _buildTextField(
-                    controller: _refundableFeeController,
+                  buildTextField(
+                    controller: refundableFeeController,
                     label: 'Refundable Fee',
                     prefix: FormatterUtil.getCurrencySymbol(widget.project.currency),
                     keyboardType: TextInputType.number,
@@ -318,8 +347,8 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                   const SizedBox(height: 8),
                   
                   // Refundable fee note
-                  _buildTextField(
-                    controller: _refundableFeeNoteController,
+                  buildTextField(
+                    controller: refundableFeeNoteController,
                     label: 'Notes on Refundable Fee',
                     maxLines: 2,
                   ),
@@ -329,7 +358,7 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _hasChanges && !_isLoading ? _saveProject : null,
+                      onPressed: hasChanges && !isLoading ? saveProject : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AssetFlowColors.primary,
                         foregroundColor: Colors.white,
@@ -346,12 +375,11 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
             ),
           ),
         ),
-      ),
     );
   }
 
   /// Build a section header
-  Widget _buildSectionHeader(String title) {
+  Widget buildSectionHeader(String title) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -370,7 +398,7 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
   }
 
   /// Build a text field
-  Widget _buildTextField({
+  Widget buildTextField({
     required TextEditingController controller,
     required String label,
     String? prefix,
@@ -394,7 +422,7 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
   }
 
   /// Build a date field
-  Widget _buildDateField({
+  Widget buildDateField({
     required String label,
     required DateTime date,
     required VoidCallback onTap,
@@ -419,8 +447,8 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
   }
 
   /// Show date picker for selecting a date
-  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
-    final DateTime initialDate = isStartDate ? _startDate : _firstPaymentDate;
+  Future<void> selectDate(BuildContext context, bool isStartDate) async {
+    final DateTime initialDate = isStartDate ? startDate : firstPaymentDate;
     final DateTime firstDate = DateTime.now().subtract(const Duration(days: 365)); // Allow dates in the past for editing
     
     final DateTime? picked = await showDatePicker(
@@ -445,79 +473,45 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
     if (picked != null) {
       setState(() {
         if (isStartDate) {
-          _startDate = picked;
+          startDate = picked;
           // If start date is after first payment date, update first payment date
-          if (_startDate.isAfter(_firstPaymentDate)) {
-            _firstPaymentDate = _startDate.add(const Duration(days: 30));
+          if (startDate.isAfter(firstPaymentDate)) {
+            firstPaymentDate = startDate.add(const Duration(days: 30));
           }
         } else {
-          _firstPaymentDate = picked;
+          firstPaymentDate = picked;
         }
-        _hasChanges = true;
+        hasChanges = true;
       });
     }
   }
 
-  /// Check if user wants to discard changes when trying to exit
-  Future<bool> _onWillPop() async {
-    if (!_hasChanges) {
-      return true;
-    }
-    
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Discard Changes?'),
-        content: const Text('You have unsaved changes. Are you sure you want to discard them?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(false); // Don't allow to leave
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(true); // Allow to leave
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AssetFlowColors.error,
-            ),
-            child: const Text('Discard'),
-          ),
-        ],
-      ),
-    );
-    
-    return result ?? false;
-  }
-
   /// Save project changes
-  Future<void> _saveProject() async {
-    if (!_formKey.currentState!.validate()) {
+  Future<void> saveProject() async {
+    if (!formKey.currentState!.validate()) {
       return;
     }
     
-    _logger.info('Saving project changes for: ${widget.project.id}');
+    logger.info('Saving project changes for: ${widget.project.id}');
     setState(() {
-      _isLoading = true;
+      isLoading = true;
     });
     
     try {
       // Parse form values for basic project fields
-      final name = _nameController.text.trim();
-      final company = _companyController.text.trim();
-      final projectLengthMonths = int.parse(_projectLengthController.text);
-      final currency = _currencyController.text.trim();
+      final name = nameController.text.trim();
+      final company = companyController.text.trim();
+      final projectLengthMonths = int.parse(projectLengthController.text);
+      final currency = currencyController.text.trim();
       
       // Parse form values for amount stage fields
-      final investmentAmount = double.tryParse(_amountController.text) ?? 0.0;
+      final investmentAmount = double.tryParse(amountController.text) ?? 0.0;
       
       // Parse form values for fee fields
-      final nonRefundableFee = double.tryParse(_nonRefundableFeeController.text) ?? 0.0;
-      final nonRefundableFeeNote = _nonRefundableFeeNoteController.text.trim();
-      final refundableFee = double.tryParse(_refundableFeeController.text) ?? 0.0;
-      final refundableFeeNote = _refundableFeeNoteController.text.trim();
+      final nonRefundableFee = double.tryParse(nonRefundableFeeController.text) ?? 0.0;
+      final nonRefundableFeeNote = nonRefundableFeeNoteController.text.trim();
+      final refundableFee = double.tryParse(refundableFeeController.text) ?? 0.0;
+      final refundableFeeNote = refundableFeeNoteController.text.trim();
       
       // Prepare data to update
       final data = {
@@ -526,8 +520,8 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
         'projectLengthMonths': projectLengthMonths,
         'currency': currency,
         'investmentAmount': investmentAmount,
-        'startDate': _startDate,
-        'firstPaymentDate': _firstPaymentDate,
+        'startDate': startDate,
+        'firstPaymentDate': firstPaymentDate,
         'nonRefundableFee': nonRefundableFee,
         'nonRefundableFeeNote': nonRefundableFeeNote,
         'refundableFee': refundableFee,
@@ -536,14 +530,14 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
       };
       
       // Update in Firestore
-      await _databaseService.updateProject(widget.project.id, data);
+      await databaseService.updateProject(widget.project.id, data);
       
-      _logger.info('Project updated successfully');
+      logger.info('Project updated successfully');
       
       if (mounted) {
         setState(() {
-          _isLoading = false;
-          _hasChanges = false;
+          isLoading = false;
+          hasChanges = false;
         });
         
         // Show success message and navigate back
@@ -553,10 +547,10 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
         Navigator.of(context).pop(true); // Return true to indicate successful update
       }
     } catch (e) {
-      _logger.severe('Error updating project: $e');
+      logger.severe('Error updating project: $e');
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error updating project: $e')),

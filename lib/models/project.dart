@@ -37,8 +37,8 @@ class Project {
     this.refundableFee = 0.0,
     this.refundableFeeNote = '',
   }) : 
-    this.startDate = startDate ?? DateTime.now(),
-    this.firstPaymentDate = firstPaymentDate ?? DateTime.now().add(const Duration(days: 30));
+    startDate = startDate ?? DateTime.now(),
+    firstPaymentDate = firstPaymentDate ?? DateTime.now().add(const Duration(days: 30));
 
   /// Create a Project object from a Firestore document
   factory Project.fromFirestore(DocumentSnapshot doc) {
