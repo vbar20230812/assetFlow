@@ -8,6 +8,8 @@ import '../utils/theme_colors.dart';
 import '../utils/formatter_util.dart';
 import '../utils/date_util.dart';
 import '../services/forex_service.dart';
+import '../services/preferences_service.dart';
+import '../widgets/payment_celebration.dart';
 
 /// A unified dashboard screen that shows calendar, investments, and projects
 class DashboardScreen extends StatefulWidget {
@@ -91,7 +93,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               }
               
               _paymentsByDate = paymentsSnapshot.data ?? {};
-              
+              _checkAndShowPaymentCelebration(context);
+
               // Calculate currency totals for charts
               final currencyTotals = _calculateCurrencyTotals(activeProjects);
               
@@ -123,6 +126,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+
+  Future<void> _checkAndShowPaymentCelebration(BuildContext context) async {
+  // Get today's date (normalized)
+  final today = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
+  
+  // Get payments for today
+  final todayPayments = _paymentsByDate[today] ?? [];
+  
+  // If there are payments today, check if we've shown celebration
+  if (todayPayments.isNotEmpty) {
+    final preferencesService = PreferencesService();
+    
+    // Process each payment
+    for (final payment in todayPayments) {
+      // For simplicity, we're using project name as ID - in a real app, use the actual project ID
+      final paymentId = payment.projectName.replaceAll(' ', '-').toLowerCase();
+      
+      // Check if we've already shown celebration for this payment
+      final hasShown = await preferencesService.hasPaymentCelebrationBeenShown(
+        paymentId, 
+        today
+      );
+      
+      // Only show celebration if we haven't shown it before
+      if (!hasShown) {
+        // Mark as shown immediately to prevent multiple popups
+        await preferencesService.markPaymentCelebrationAsShown(
+          paymentId, 
+          today
+        );
+        
+        // Show the celebration dialog after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => PaymentCelebrationDialog(
+                amount: FormatterUtil.formatCurrency(
+                  payment.amount, 
+                  currencyCode: payment.currency
+                ),
+                currency: payment.currency,
+                projectName: payment.projectName,
+              ),
+            );
+          }
+        });
+        
+        // Only show one celebration at a time
+        break;
+      }
+    }
+  }
+}
   
   // Calculate all payment dates for all projects
   Future<Map<DateTime, List<PaymentInfo>>> _calculateAllPaymentDates(List<Project> projects) async {
