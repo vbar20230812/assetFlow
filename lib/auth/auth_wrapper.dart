@@ -1,46 +1,65 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:logging/logging.dart';
+import '../dashboard/dashboard_screen.dart';
+import '../list/empty_assets_screen.dart';
+import '../services/database_service.dart';
+import '../auth/auth_screen.dart';
+import '../start/splash_screen.dart';
 
-import 'auth_screen.dart';
-import '../auth/auth_service.dart';
-import '../widgets/asset_flow_loader.dart';
-import '../list/assets_list_screen.dart';
-
-/// Auth wrapper to handle authentication state
 class AuthWrapper extends StatelessWidget {
-  static final Logger _logger = Logger('AuthWrapper');
-  final AuthService _authService = AuthService();
-
-  AuthWrapper({super.key});
+  const AuthWrapper({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    _logger.info('AuthWrapper built.');
-    
-    // Use StreamBuilder to listen for auth state changes
     return StreamBuilder<User?>(
-      stream: _authService.authStateChanges,
+      stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Show loading while determining auth state
+        // If the snapshot has user data but is in a loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            body: Center(
-              child: AssetFlowLoader(
-                size: 60,
-                primaryColor: Theme.of(context).primaryColor,
-              ),
-            ),
-          );
+          return const SplashScreen();
         }
         
-        // Check if the user is authenticated
+        // If the snapshot has user data, the user is logged in
         if (snapshot.hasData && snapshot.data != null) {
-          _logger.info('User is logged in. Navigating to AssetsListScreen.');
-          return const AssetsListScreen();
-        } else {
-          _logger.info('User is not logged in. Navigating to AuthScreen.');
+          return const UserRouter();
+        }
+        
+        // Otherwise, the user is not logged in
+        return const AuthScreen();
+      },
+    );
+  }
+}
+
+/// Router that checks if the user has any assets and routes accordingly
+class UserRouter extends StatelessWidget {
+  const UserRouter({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final DatabaseService databaseService = DatabaseService();
+
+    return StreamBuilder<List<dynamic>>(
+      stream: databaseService.getUserProjects(),
+      builder: (context, snapshot) {
+        // Show splash screen while loading
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SplashScreen();
+        }
+        
+        // If there's an error, show the auth screen
+        if (snapshot.hasError) {
           return const AuthScreen();
+        }
+        
+        // Check if the user has any projects
+        final hasProjects = snapshot.hasData && snapshot.data!.isNotEmpty;
+        
+        // Route to dashboard if they have projects, otherwise to empty state
+        if (hasProjects) {
+          return const DashboardScreen();
+        } else {
+          return const EmptyAssetsScreen();
         }
       },
     );
