@@ -12,7 +12,7 @@ class DashboardTile extends StatelessWidget {
   final EdgeInsetsGeometry margin;
   
   const DashboardTile({
-    Key? key,
+    super.key,
     required this.title,
     required this.child,
     this.height,
@@ -20,7 +20,7 @@ class DashboardTile extends StatelessWidget {
     this.onTap,
     this.padding = const EdgeInsets.all(16.0),
     this.margin = const EdgeInsets.only(bottom: 16.0),
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

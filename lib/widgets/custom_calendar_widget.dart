@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../utils/date_util.dart';
 import '../utils/theme_colors.dart';
-import '../models/payment_model.dart';
+import '../models/payment_model.dart'; // Import the correct file
 
 /// A custom calendar widget that doesn't require external packages
 class CustomCalendarWidget extends StatefulWidget {
@@ -12,12 +12,12 @@ class CustomCalendarWidget extends StatefulWidget {
   final DateTime? selectedDay;
 
   const CustomCalendarWidget({
-    Key? key,
+    super.key,
     required this.events,
     required this.onDaySelected,
     required this.focusedDay,
     this.selectedDay,
-  }) : super(key: key);
+  });
 
   @override
   _CustomCalendarWidgetState createState() => _CustomCalendarWidgetState();

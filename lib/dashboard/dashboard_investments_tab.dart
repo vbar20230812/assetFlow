@@ -10,9 +10,9 @@ class InvestmentsTab extends StatefulWidget {
   final List<Project> projects;
   
   const InvestmentsTab({
-    Key? key,
+    super.key,
     required this.projects,
-  }) : super(key: key);
+  });
 
   @override
   State<InvestmentsTab> createState() => _InvestmentsTabState();
@@ -338,7 +338,7 @@ class _InvestmentsTabState extends State<InvestmentsTab> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

@@ -47,6 +47,6 @@ class PreferencesService {
   String _buildPaymentCelebrationKey(String projectId, DateTime date) {
     // Format: payment_celebration_shown_PROJECT-ID_YYYY-MM-DD
     final formattedDate = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    return '${_keyPaymentCelebration}${projectId}_$formattedDate';
+    return '$_keyPaymentCelebration${projectId}_$formattedDate';
   }
 }

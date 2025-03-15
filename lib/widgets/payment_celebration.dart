@@ -7,10 +7,10 @@ class ConfettiAnimation extends StatefulWidget {
   final double height;
 
   const ConfettiAnimation({
-    Key? key,
+    super.key,
     this.width = 300,
     this.height = 300,
-  }) : super(key: key);
+  });
 
   @override
   State<ConfettiAnimation> createState() => _ConfettiAnimationState();
@@ -170,11 +170,11 @@ class PaymentCelebrationDialog extends StatelessWidget {
   final String projectName;
 
   const PaymentCelebrationDialog({
-    Key? key,
+    super.key,
     required this.amount,
     required this.currency,
     required this.projectName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

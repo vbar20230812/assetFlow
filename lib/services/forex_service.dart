@@ -12,7 +12,7 @@ class ForexService {
   static const String _exchangeRateApiBaseUrl = 'https://api.exchangerate.host/convert';
   
   // Cache exchange rates to reduce API calls
-  Map<String, Map<String, double>> _rateCache = {};
+  final Map<String, Map<String, double>> _rateCache = {};
   DateTime _lastCacheUpdate = DateTime(2000); // Initialize with old date
   static const Duration _cacheDuration = Duration(hours: 6); // Cache for 6 hours
   

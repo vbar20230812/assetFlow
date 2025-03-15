@@ -7,7 +7,7 @@ import '../auth/auth_screen.dart';
 import '../start/splash_screen.dart';
 
 class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({Key? key}) : super(key: key);
+  const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class AuthWrapper extends StatelessWidget {
 
 /// Router that checks if the user has any assets and routes accordingly
 class UserRouter extends StatelessWidget {
-  const UserRouter({Key? key}) : super(key: key);
+  const UserRouter({super.key});
 
   @override
   Widget build(BuildContext context) {
